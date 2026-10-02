@@ -380,7 +380,7 @@ const PAYNOW_QR_URL  = "paynow-qr.png";       // image file next to index.html
   function esc(s) {
     return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
-  // Exact, case-insensitive match key. "@XR", "xr", "ｘｒ" all become "xr".
+  // Exact, case-insensitive match key. "@Sam", "sam", "ｓａｍ" all become "sam".
   function key(s) {
     return String(s || "").normalize("NFKC").trim().replace(/^@+/, "").replace(/\s+/g, " ").toLowerCase();
   }
