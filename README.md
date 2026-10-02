@@ -70,6 +70,8 @@ You only edit the **Orders** tab, and mostly just two columns (both have dropdow
 | | `NO UPDATE` | Tracker stays grey ("No update yet") |
 | | *(blank)* | Money-only line. Shown under "Credits & adjustments" with no tracker |
 
+**Expected JP ship date** (column J) shows on the page as "Ships from Japan …"; **Note** (column K) is just what they ordered (members, sizes, variants). Leave either blank if there's nothing specific.
+
 When a consolidation batch is sent off, set **Batch** (e.g. `Batch 4`) and move those rows' Stage along.
 For a new drop, add rows at the bottom: one row per person per item, the same as the existing ones.
 For a new friend, add a row to **Handles** as well.

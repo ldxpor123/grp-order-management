@@ -32,18 +32,40 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
     --line: rgba(68, 16, 9, .14);
     --on-ink: #f8f7f1;
     --blob: #ded8cf;
+    --pd-bg: #dcebd8; --pd-ink: #2e6b3b;      /* paid */
+    --np-bg: #f6dad5; --np-ink: #a12f2a;      /* not paid */
+    --de-bg: #dce6f2; --de-ink: #2f5683;      /* deducted */
+    --cr-bg: #f5e6c4; --cr-ink: #85570c;      /* credit */
+    --pe-bg: #e8e7e4; --pe-ink: #6e625c;      /* personal */
+    --s-ordered: #b7791f;   --s-ordered-bg: #f6ead2;
+    --s-warehouse: #3e78b2; --s-warehouse-bg: #dde8f4;
+    --s-shipping: #7a55b8;  --s-shipping-bg: #e9e0f5;
+    --s-delivered: #2f855a; --s-delivered-bg: #d9eee1;
+    --s-none: #9a8f8a;      --s-none-bg: #eeebe8;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #1a1311; --surface: #221917; --stone: #2c221f; --sand: #3a2d28;
       --ink: #f3eee6; --ink-soft: #bfb2a8; --ink-faint: #6f625c;
       --line: rgba(243, 238, 230, .14); --on-ink: #1a1311; --blob: #3a2420;
+      --pd-bg: #20382a; --pd-ink: #9fd8ae; --np-bg: #4a2522; --np-ink: #f4b3aa;
+      --de-bg: #1f3048; --de-ink: #a9c6ee; --cr-bg: #43361a; --cr-ink: #f0cf86;
+      --pe-bg: #2c221f; --pe-ink: #bfb2a8;
+      --s-ordered: #e0a94e; --s-ordered-bg: #3a2d17; --s-warehouse: #7db0e6; --s-warehouse-bg: #1c2e42;
+      --s-shipping: #b497ea; --s-shipping-bg: #2e2442; --s-delivered: #73c495; --s-delivered-bg: #1c3527;
+      --s-none: #8a7f79; --s-none-bg: #2c2522;
     }
   }
   :root[data-theme="dark"] {
     --bg: #1a1311; --surface: #221917; --stone: #2c221f; --sand: #3a2d28;
     --ink: #f3eee6; --ink-soft: #bfb2a8; --ink-faint: #6f625c;
     --line: rgba(243, 238, 230, .14); --on-ink: #1a1311; --blob: #3a2420;
+    --pd-bg: #20382a; --pd-ink: #9fd8ae; --np-bg: #4a2522; --np-ink: #f4b3aa;
+    --de-bg: #1f3048; --de-ink: #a9c6ee; --cr-bg: #43361a; --cr-ink: #f0cf86;
+    --pe-bg: #2c221f; --pe-ink: #bfb2a8;
+    --s-ordered: #e0a94e; --s-ordered-bg: #3a2d17; --s-warehouse: #7db0e6; --s-warehouse-bg: #1c2e42;
+    --s-shipping: #b497ea; --s-shipping-bg: #2e2442; --s-delivered: #73c495; --s-delivered-bg: #1c3527;
+    --s-none: #8a7f79; --s-none-bg: #2c2522;
   }
 
   * { box-sizing: border-box; }
@@ -136,29 +158,43 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
 
   .pill { flex: none; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
     border-radius: 999px; padding: 4px 10px; white-space: nowrap; border: 1px solid var(--ink); }
-  .pill.notpaid { background: var(--ink); color: var(--on-ink); }
-  .pill.paid { background: transparent; color: var(--ink); }
-  .pill.deducted { background: var(--sand); border-color: var(--sand); color: var(--ink); }
-  .pill.credit { background: transparent; border-style: dashed; color: var(--ink); }
-  .pill.personal { background: var(--stone); border-color: var(--stone); color: var(--ink-soft); }
-  .pill.tbc { background: transparent; border-color: var(--ink-faint); color: var(--ink-soft); }
+  .pill.notpaid { background: var(--np-bg); border-color: var(--np-bg); color: var(--np-ink); }
+  .pill.paid { background: var(--pd-bg); border-color: var(--pd-bg); color: var(--pd-ink); }
+  .pill.deducted { background: var(--de-bg); border-color: var(--de-bg); color: var(--de-ink); }
+  .pill.credit { background: var(--cr-bg); border-color: var(--cr-bg); color: var(--cr-ink); }
+  .pill.personal { background: var(--pe-bg); border-color: var(--pe-bg); color: var(--pe-ink); }
+  .pill.tbc { background: transparent; border: 1px dashed var(--ink-faint); color: var(--ink-soft); }
+  .pill::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+    margin-right: 6px; vertical-align: 1px; }
+
+  /* each goods row carries its stage colour */
+  .row[data-stage] { --st: var(--s-none); --st-bg: var(--s-none-bg); border-left: 3px solid var(--st); padding-left: 14px; }
+  .row[data-stage="ordered"] { --st: var(--s-ordered); --st-bg: var(--s-ordered-bg); }
+  .row[data-stage="warehouse"] { --st: var(--s-warehouse); --st-bg: var(--s-warehouse-bg); }
+  .row[data-stage="shipping"] { --st: var(--s-shipping); --st-bg: var(--s-shipping-bg); }
+  .row[data-stage="delivered"] { --st: var(--s-delivered); --st-bg: var(--s-delivered-bg); }
 
   /* 4-step tracker */
   .tracker { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); margin: 16px 0 0; padding: 0; }
   .tracker li { position: relative; padding-top: 16px; font-size: 11.5px; color: var(--ink-faint); }
-  .tracker li::before { content: ""; position: absolute; top: 3px; left: 0; right: 0; height: 1px; background: var(--line); }
-  .tracker li::after { content: ""; position: absolute; top: 0; left: 0; width: 7px; height: 7px; border-radius: 50%;
-    background: var(--bg); border: 1px solid var(--ink-faint); }
+  .tracker li::before { content: ""; position: absolute; top: 3px; left: 0; right: 0; height: 2px; background: var(--line); border-radius: 2px; }
+  .tracker li::after { content: ""; position: absolute; top: 0; left: 0; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--bg); border: 1.5px solid var(--ink-faint); box-sizing: border-box; }
   .tracker li:last-child::before { right: auto; width: 0; }
   .tracker li.done { color: var(--ink-soft); }
-  .tracker li.done::before { background: var(--ink); }
-  .tracker li.done::after { background: var(--ink); border-color: var(--ink); }
-  .tracker li.now { color: var(--ink); font-weight: 600; }
+  .tracker li.done::before { background: var(--st); }
+  .tracker li.done::after { background: var(--st); border-color: var(--st); }
+  .tracker li.now { color: var(--st); font-weight: 600; }
   .tracker li.now::before { background: var(--line); }
-  .tracker li.now::after { box-shadow: 0 0 0 4px var(--sand); }
+  .tracker li.now::after { box-shadow: 0 0 0 4px var(--st-bg); }
 
-  .stage { font-size: 13.5px; margin-top: 10px; font-weight: 500; }
-  .note { font-size: 13px; color: var(--ink-soft); margin-top: 4px; }
+  .stage { display: inline-flex; align-items: center; gap: 7px; margin-top: 12px; font-size: 13px; font-weight: 600;
+    background: var(--st-bg); color: var(--st); border-radius: 999px; padding: 4px 12px 4px 10px; }
+  .stage::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .ship { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 10px; font-size: 13px; color: var(--ink); }
+  .ship svg { width: 15px; height: 15px; flex: none; color: var(--ink-soft); }
+  .ship .lbl { color: var(--ink-soft); }
+  .note { font-size: 13.5px; color: var(--ink-soft); margin-top: 3px; }
 
   footer { margin-top: 40px; font-size: 12px; color: var(--ink-faint); }
 
@@ -323,7 +359,7 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
     const [o, h] = await Promise.all([fetchText(ORDERS_CSV_URL), fetchText(HANDLES_CSV_URL)]);
     const orders = table(o, {
       person: "person", item: "item", qty: "qty", sgd: "sgd", jpy: "jpy", rate: "rate",
-      pay: "payment", stage: "stage", batch: "batch", note: "note"
+      pay: "payment", stage: "stage", batch: "batch", ship: "expected", note: "note"
     }).filter((r) => r.person && r.item);
     const handles = table(h, { person: "person", handles: "telegram" }).filter((r) => r.person);
     return { orders, handles };
@@ -373,15 +409,21 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
 
     const st = r.stage.toUpperCase().trim();
     const stageText = STAGE_LABEL[st] || r.stage;
+    const stageKey = { "ORDERED": "ordered", "AT WAREHOUSE": "warehouse", "SHIPPING TO SG": "shipping",
+                       "SHIPPING": "shipping", "DELIVERED": "delivered" }[st] || "none";
+    const ship = r.ship ? `<div class="ship">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+          <span class="lbl">Ships from Japan</span> <span>${esc(r.ship)}</span></div>` : "";
     return `
-      <article class="row">
+      <article class="row"${withTracker ? ` data-stage="${stageKey}"` : ""}>
         <div class="row-head">
           <div class="row-title">${esc(r.item)}</div>
           ${payPill(r.pay)}
         </div>
+        ${r.note ? `<div class="note">${esc(r.note)}</div>` : ""}
         ${meta.length ? `<div class="meta">${meta.join("")}</div>` : ""}
         ${withTracker ? tracker(r.stage) + `<div class="stage">${esc(stageText)}</div>` : ""}
-        ${r.note ? `<div class="note">${esc(r.note)}</div>` : ""}
+        ${ship}
       </article>`;
   }
 
