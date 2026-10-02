@@ -1,0 +1,4 @@
+# Order data stays out of git. It lives in Google Sheets only.
+*.xlsx
+*.xls
+*.csv
