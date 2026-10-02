@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="light dark">
-<title>Order Tracker</title>
+<title>DX's Group Orders</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -18,6 +18,11 @@
    ===================================================================== */
 const ORDERS_CSV_URL  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cbSbZfzIlYiQW1KW7eE8PIwRZ5c_tR9RM4tbJQruOyp9fKI9btjlnLxwJZP-2Aj833KYi3kOAC/pub?gid=1981955730&single=true&output=csv";
 const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cbSbZfzIlYiQW1KW7eE8PIwRZ5c_tR9RM4tbJQruOyp9fKI9btjlnLxwJZP-2Aj833KYi3kOAC/pub?gid=1824590127&single=true&output=csv";
+
+// Who runs the orders, and how friends pay you.
+const OWNER_NAME     = "DX";
+const OWNER_TELEGRAM = "asukanyann";          // without the @
+const PAYNOW_QR_URL  = "paynow-qr.png";       // image file next to index.html
 /* ===================================================================== */
 </script>
 <style>
@@ -89,10 +94,7 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
     padding: 0 20px 56px; padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
 
   /* top bar */
-  .bar { display: flex; align-items: center; justify-content: space-between; height: 64px; }
-  .brand { font-weight: 600; font-size: 15px; letter-spacing: -.01em; color: inherit; text-decoration: none; }
-  .brand:hover { opacity: .75; }
-  .brand span { color: var(--ink-faint); font-weight: 400; margin-left: 10px; }
+  .bar { display: flex; align-items: center; justify-content: flex-end; height: 64px; }
   .theme-btn { border: 1px solid var(--line); background: transparent; color: var(--ink);
     width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; }
   .theme-btn svg { width: 16px; height: 16px; }
@@ -128,6 +130,49 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
     color: var(--ink); border-radius: 999px; padding: 10px 18px; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
   .back svg { width: 16px; height: 16px; }
   .back:hover { background: var(--ink); color: var(--on-ink); }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+  .actions .back { margin-top: 0; }
+  .pay-btn { display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid var(--ink); background: var(--ink); color: var(--on-ink);
+    border-radius: 999px; padding: 10px 22px; font: inherit; font-size: 14px; font-weight: 600; letter-spacing: .04em; cursor: pointer; }
+  .pay-btn svg { width: 16px; height: 16px; }
+  .pay-btn:hover { opacity: .88; }
+  .view-home .eyebrow { margin-bottom: 14px; }
+  footer a { color: inherit; }
+
+  /* pay sheet */
+  dialog.paysheet { border: 0; padding: 0; background: transparent; color: var(--ink); max-width: 420px; width: calc(100% - 32px); }
+  dialog.paysheet::backdrop { background: rgba(26, 19, 17, .55); backdrop-filter: blur(2px); }
+  .sheet { background: var(--bg); border: 1px solid var(--line); border-radius: 26px; padding: 22px 22px 20px; position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+  .sheet h3 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+  .sheet .sub { margin: 2px 0 0; color: var(--ink-soft); font-size: 13.5px; }
+  .x { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line);
+    background: transparent; color: var(--ink); cursor: pointer; display: grid; place-items: center; }
+  .x svg { width: 16px; height: 16px; }
+  .amt-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px;
+    padding: 12px 14px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
+  .amt-row .k { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+  .amt-row .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .qr { margin-top: 14px; background: #fff; border-radius: 18px; padding: 14px; display: grid; place-items: center; border: 1px solid var(--line); }
+  .qr img { width: 100%; max-width: 260px; height: auto; display: block; }
+  .qr .missing { color: #6e625c; font-size: 14px; text-align: center; padding: 30px 10px; }
+  .qr-hint { font-size: 12.5px; color: var(--ink-soft); text-align: center; margin: 8px 0 0; }
+  .steps { margin: 14px 0 0; padding-left: 20px; font-size: 13.5px; color: var(--ink-soft); }
+  .steps li { margin: 3px 0; }
+  .steps b { color: var(--ink); font-weight: 600; }
+  .msg-box { margin-top: 14px; padding: 12px 14px; border-radius: 16px; border: 1px dashed var(--ink-faint); font-size: 13.5px; }
+  .sheet-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .sbtn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px; padding: 11px 14px;
+    font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; border: 1.5px solid var(--ink); }
+  .sbtn.solid { background: var(--ink); color: var(--on-ink); }
+  .sbtn.ghost { background: transparent; color: var(--ink); }
+  .sbtn svg { width: 16px; height: 16px; }
+  .mini { border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 999px; padding: 5px 12px;
+    font: inherit; font-size: 12.5px; cursor: pointer; }
+  @media (max-width: 480px) {
+    dialog.paysheet { margin: auto auto 0; width: 100%; max-width: none; }
+    .sheet { border-radius: 26px 26px 0 0; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+  }
   .total .label { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; margin-top: 14px; }
   .total .amount { font-size: clamp(44px, 12vw, 60px); font-weight: 300; letter-spacing: -.04em; line-height: 1.05;
     font-variant-numeric: tabular-nums; margin-top: 4px; }
@@ -216,13 +261,13 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
 
 <div class="page">
   <div class="bar">
-    <a class="brand" id="home-link" href="./" aria-label="Back to the start page">group order<span>JP → SG</span></a>
     <button class="theme-btn" id="theme" type="button" aria-label="Switch light / dark">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
     </button>
   </div>
 
   <section id="home" class="view-home">
+    <div class="eyebrow">DX's group orders</div>
     <h1>Orders</h1>
     <p class="tag">from Japan, to you.</p>
     <p class="lead">Type your name or Telegram @ to see your goods, what you've paid and where everything is.</p>
@@ -243,16 +288,58 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
       <div class="eyebrow">Orders for</div>
       <h1 class="name" id="name"></h1>
       <section id="summary" class="total" aria-live="polite"></section>
-      <button class="back" id="back" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
-        New search
-      </button>
+      <div class="actions">
+        <button class="pay-btn hidden" id="pay" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>
+          PAY
+        </button>
+        <button class="back" id="back" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+          New search
+        </button>
+      </div>
     </aside>
     <main id="result" class="content"></main>
   </div>
 
   <footer id="foot"></footer>
 </div>
+
+<dialog class="paysheet" id="paysheet" aria-labelledby="pay-title">
+  <div class="sheet">
+    <button class="x" id="pay-close" type="button" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <h3 id="pay-title">Pay DX</h3>
+    <p class="sub">by PayNow</p>
+
+    <div class="amt-row">
+      <div><div class="k">Amount</div><div class="v" id="pay-amt"></div></div>
+      <button class="mini" type="button" data-copy="amount">Copy</button>
+    </div>
+
+    <div class="qr" id="pay-qr"></div>
+    <p class="qr-hint">On your phone? Long-press the QR to save it, then open it in your bank app.</p>
+
+    <ol class="steps">
+      <li>Scan the QR in your banking app.</li>
+      <li>Enter <b id="pay-amt-2"></b>.</li>
+      <li>Let DX know you've paid.</li>
+    </ol>
+
+    <div class="msg-box" id="pay-msg"></div>
+    <div class="sheet-btns">
+      <button class="sbtn ghost" type="button" data-copy="message">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+        <span>Copy message</span>
+      </button>
+      <a class="sbtn solid" id="pay-tg" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/><path d="M9 13l12-9"/></svg>
+        Message DX
+      </a>
+    </div>
+  </div>
+</dialog>
 
 <script>
 (function () {
@@ -277,6 +364,7 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
 
   let data = null;        // { orders: [...], handles: [...] }
   let loadError = null;
+  let payState = null;    // { person, owe } for the PAY sheet
 
   /* ---------- theme toggle (remembered on this device only) ---------- */
   try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
@@ -457,7 +545,9 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
     const adjust = mine.filter((r) => !r.stage.trim());
 
     nameEl.textContent = person;
-    document.title = person + " · Order Tracker";
+    document.title = person + " · DX's Group Orders";
+    payState = { person, owe };
+    $("pay").classList.toggle("hidden", !(owe > 0));
     summaryEl.innerHTML = `
       <div class="label" style="margin-top:0">${label}</div>
       <div class="amount">${amount}</div>
@@ -496,7 +586,7 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
     viewResult.classList.add("hidden");
     homeEl.classList.remove("hidden");
     summaryEl.innerHTML = ""; result.innerHTML = ""; nameEl.textContent = "";
-    document.title = "Order Tracker";
+    document.title = "DX's Group Orders";
     if (html) { statusEl.innerHTML = html; statusEl.classList.remove("hidden"); }
     else statusEl.classList.add("hidden");
     window.scrollTo(0, 0);
@@ -543,15 +633,52 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
     if (search(q)) history.pushState(null, "", "#" + encodeURIComponent(q.trim()));
   });
   $("back").addEventListener("click", goHome);
-  $("home-link").addEventListener("click", (e) => { e.preventDefault(); goHome(); });
   window.addEventListener("popstate", route);
+
+  /* ---------- PAY sheet ---------- */
+  const sheet = $("paysheet");
+  function payMessage() {
+    return `Hi ${OWNER_NAME}! I've paid ${sgd(payState.owe)} by PayNow for my group orders (${payState.person}).`;
+  }
+  function openPay() {
+    if (!payState) return;
+    const amt = sgd(payState.owe);
+    $("pay-amt").textContent = amt; $("pay-amt-2").textContent = amt;
+    $("pay-msg").textContent = payMessage();
+    $("pay-tg").href = `https://t.me/${encodeURIComponent(OWNER_TELEGRAM)}?text=${encodeURIComponent(payMessage())}`;
+    const qr = $("pay-qr");
+    if (!qr.querySelector("img")) {
+      const img = new Image();
+      img.alt = "PayNow QR code for " + OWNER_NAME;
+      img.onerror = () => { qr.innerHTML = `<div class="missing">QR code coming soon.<br>Message ${esc(OWNER_NAME)} for PayNow details.</div>`; };
+      img.src = PAYNOW_QR_URL;
+      qr.appendChild(img);
+    }
+    if (sheet.showModal) sheet.showModal(); else sheet.setAttribute("open", "");
+  }
+  function closePay() { if (sheet.close) sheet.close(); else sheet.removeAttribute("open"); }
+  async function copy(text, btn) {
+    try { await navigator.clipboard.writeText(text); }
+    catch (e) {                                       // older phones: fall back to a hidden textarea
+      const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t);
+      t.select(); try { document.execCommand("copy"); } catch (_) {} t.remove();
+    }
+    const label = btn.querySelector("span") || btn, old = label.textContent;
+    label.textContent = "Copied!"; setTimeout(() => { label.textContent = old; }, 1400);
+  }
+  $("pay").addEventListener("click", openPay);
+  $("pay-close").addEventListener("click", closePay);
+  sheet.addEventListener("click", (e) => { if (e.target === sheet) closePay(); });   // tap outside to close
+  sheet.querySelectorAll("[data-copy]").forEach((b) => b.addEventListener("click", () =>
+    copy(b.dataset.copy === "amount" ? sgdFmt.format(payState.owe) : payMessage(), b)));
 
   /* ---------- start ---------- */
   btn.disabled = true;
   load().then((d) => {
     data = d;
     btn.disabled = false;
-    $("foot").textContent = "Updated " + new Date().toLocaleString("en-SG", { dateStyle: "medium", timeStyle: "short" }) + " · refresh for the latest";
+    $("foot").innerHTML = `${esc(OWNER_NAME)}'s JP → SG group orders · Telegram <a href="https://t.me/${encodeURIComponent(OWNER_TELEGRAM)}" target="_blank" rel="noopener">@${esc(OWNER_TELEGRAM)}</a> · updated ` +
+      esc(new Date().toLocaleString("en-SG", { dateStyle: "medium", timeStyle: "short" }));
     statusEl.classList.add("hidden");
     route();
   }).catch((err) => {
