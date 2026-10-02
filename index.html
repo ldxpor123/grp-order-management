@@ -426,21 +426,23 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
         ${adjust.length ? `<div><b>${adjust.length}</b>adjustments</div>` : ""}
       </div>`;
 
-    const filters = [["all", "All"], ["way", "On the way"], ["done", "Delivered"]];
+    const filters = [["way", "On the way"], ["done", "Delivered"]];
     if (adjust.length) filters.push(["adj", "Credits"]);
+    filters.push(["all", "All"]);
     let html = `<div class="chips-row" role="group" aria-label="Filter">` +
-      filters.map(([id, name], i) => `<button type="button" class="fchip" data-f="${id}" aria-pressed="${i === 0}">${name}</button>`).join("") +
+      filters.map(([id, name]) => `<button type="button" class="fchip" data-f="${id}" aria-pressed="false">${name}</button>`).join("") +
       `</div>`;
     html += section("way", "On the way", onTheWay, true, "Nothing on the way right now.");
     html += section("done", "Delivered", delivered, true, "Nothing delivered yet.");
     if (adjust.length) html += section("adj", "Credits & adjustments", adjust, false, "");
 
     result.innerHTML = html;
-    result.querySelectorAll(".fchip").forEach((b) => b.addEventListener("click", () => {
-      result.querySelectorAll(".fchip").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
-      const f = b.dataset.f;
+    const applyFilter = (f) => {
+      result.querySelectorAll(".fchip").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.f === f)));
       result.querySelectorAll("section[data-sec]").forEach((s) => s.classList.toggle("hidden", f !== "all" && s.dataset.sec !== f));
-    }));
+    };
+    result.querySelectorAll(".fchip").forEach((b) => b.addEventListener("click", () => applyFilter(b.dataset.f)));
+    applyFilter(onTheWay.length ? "way" : "all");   // start on "On the way"; show everything if nothing is on the way
 
     homeEl.classList.add("hidden");
     viewResult.classList.remove("hidden");
