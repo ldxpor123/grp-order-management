@@ -76,6 +76,24 @@ For a new friend, add a row to **Handles** as well.
 
 Changes show up on the page after Google re-publishes, which usually takes **about 5 minutes**. Friends just refresh.
 
+## One workbook for everything (optional, recommended)
+
+`DX_JP_Goods_combined.xlsx` (not in git) holds all your original tabs **plus** Orders and Handles:
+
+- **Orders** amounts are live formulas, e.g. SGD `=ROUND('kubo grad con goods'!I29,2)`, JPY `='kubo grad con goods'!H29`. Change a drop tab and Orders (and the website) follow.
+- **Summary** status cells read from Orders (`=IF(Orders!G2="","",Orders!G2)`) and each "AMOUNT YET TO PAY" is a `SUMIFS` over Orders. So you change a status in **one place: Orders**.
+
+**Publishing:** in *Publish to web → Published content & settings*, choose **only Orders and Handles**, not "Entire document". Otherwise every tab is public.
+
+**Don't sort the Orders tab** (Summary points at specific rows). Use *Data → Filter views* to sort or filter just for yourself. Add new rows at the bottom.
+
+### Adding a new drop
+
+1. Make the drop tab the way you always do (per-person blocks with a GRAND TOTAL).
+2. In Orders, add one row per person: copy a row from an older drop and change the tab name and cells,
+   e.g. SGD `=ROUND('new drop'!I24,2)`, JPY `='new drop'!H24`, Rate `='new drop'!D4`.
+3. If you keep a Summary block for that friend, add a line with status `=IF(Orders!G66="","",Orders!G66)`; their total updates by itself.
+
 ## Privacy, in plain words
 
 - The page only ever shows the rows for the exact name or handle typed. It never lists, suggests or autocompletes other people.

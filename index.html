@@ -16,8 +16,8 @@
    They look like:
    https://docs.google.com/spreadsheets/d/e/2PACX-.../pub?gid=0&single=true&output=csv
    ===================================================================== */
-const ORDERS_CSV_URL  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cbSbZfzIlYiQW1KW7eE8PIwRZ5c_tR9RM4tbJQruOyp9fKI9btjlnLxwJZP-2Aj833KYi3kOAC/pub?gid=863135978&single=true&output=csv";
-const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cbSbZfzIlYiQW1KW7eE8PIwRZ5c_tR9RM4tbJQruOyp9fKI9btjlnLxwJZP-2Aj833KYi3kOAC/pub?gid=1367806110&single=true&output=csv";
+const ORDERS_CSV_URL  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cbSbZfzIlYiQW1KW7eE8PIwRZ5c_tR9RM4tbJQruOyp9fKI9btjlnLxwJZP-2Aj833KYi3kOAC/pub?gid=1981955730&single=true&output=csv";
+const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cbSbZfzIlYiQW1KW7eE8PIwRZ5c_tR9RM4tbJQruOyp9fKI9btjlnLxwJZP-2Aj833KYi3kOAC/pub?gid=1824590127&single=true&output=csv";
 /* ===================================================================== */
 </script>
 <style>
@@ -68,21 +68,22 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
 
   /* top bar */
   .bar { display: flex; align-items: center; justify-content: space-between; height: 64px; }
-  .brand { font-weight: 600; font-size: 15px; letter-spacing: -.01em; }
+  .brand { font-weight: 600; font-size: 15px; letter-spacing: -.01em; color: inherit; text-decoration: none; }
+  .brand:hover { opacity: .75; }
   .brand span { color: var(--ink-faint); font-weight: 400; margin-left: 10px; }
   .theme-btn { border: 1px solid var(--line); background: transparent; color: var(--ink);
     width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; }
   .theme-btn svg { width: 16px; height: 16px; }
 
-  /* layout */
-  .layout { display: grid; gap: 8px; }
-  .hero { padding: 40px 0 8px; }
-  h1 { margin: 0; font-weight: 800; font-size: clamp(44px, 13vw, 88px); line-height: .95; letter-spacing: -.045em; text-transform: uppercase; }
-  .hero .tag { font-size: clamp(18px, 4.6vw, 26px); font-weight: 400; margin: 10px 0 0; letter-spacing: -.02em; }
-  .hero .lead { color: var(--ink-soft); margin: 14px 0 0; max-width: 34ch; }
+  /* home: everything centred */
+  .view-home { min-height: calc(100vh - 64px - 72px); min-height: calc(100svh - 64px - 72px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px 0 48px; }
+  h1 { margin: 0; font-weight: 800; font-size: clamp(52px, 15vw, 120px); line-height: .95; letter-spacing: -.045em; text-transform: uppercase; }
+  .view-home .tag { font-size: clamp(18px, 4.6vw, 26px); font-weight: 400; margin: 12px 0 0; letter-spacing: -.02em; }
+  .view-home .lead { color: var(--ink-soft); margin: 14px auto 0; max-width: 34ch; }
 
-  form.search { margin-top: 28px; display: flex; align-items: center; border: 1.5px solid var(--ink);
-    border-radius: 999px; padding: 4px 4px 4px 20px; max-width: 440px; background: var(--bg); }
+  form.search { margin: 30px auto 0; width: 100%; display: flex; align-items: center; border: 1.5px solid var(--ink);
+    border-radius: 999px; padding: 4px 4px 4px 20px; max-width: 440px; background: var(--bg); text-align: left; }
   .search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink);
     font: inherit; font-size: 16px; padding: 10px 8px 10px 0; }
   .search input::placeholder { color: var(--ink-faint); }
@@ -92,13 +93,19 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
   .search button svg { width: 16px; height: 16px; }
   .search button:disabled { opacity: .5; cursor: progress; }
   form.search:focus-within { box-shadow: 0 0 0 4px var(--sand); }
-
-  .msg { margin-top: 22px; color: var(--ink-soft); max-width: 440px; }
+  .msg { margin: 20px auto 0; color: var(--ink-soft); max-width: 440px; }
   .msg strong { color: var(--ink); font-weight: 600; }
 
   /* total */
-  .total { margin-top: 32px; padding-top: 22px; border-top: 1px solid var(--line); max-width: 440px; }
-  .hello { font-size: 13px; color: var(--ink-soft); }
+  /* results: name + total on the left, items on the right */
+  .view-result { display: grid; gap: 8px; padding-top: 20px; }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+  h1.name { font-size: clamp(40px, 11vw, 72px); margin-top: 6px; overflow-wrap: anywhere; }
+  .total { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+  .back { margin-top: 26px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid var(--ink); background: transparent;
+    color: var(--ink); border-radius: 999px; padding: 10px 18px; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .back svg { width: 16px; height: 16px; }
+  .back:hover { background: var(--ink); color: var(--on-ink); }
   .total .label { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; margin-top: 14px; }
   .total .amount { font-size: clamp(44px, 12vw, 60px); font-weight: 300; letter-spacing: -.04em; line-height: 1.05;
     font-variant-numeric: tabular-nums; margin-top: 4px; }
@@ -158,17 +165,13 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
   .hidden { display: none !important; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-  /* desktop: left column (title, search, total) stays put, items scroll on the right */
+  /* desktop: split in two, the items get the bigger part */
   @media (min-width: 900px) {
     .page { padding-left: 40px; padding-right: 40px; }
     .bar { height: 80px; }
-    body.has-result .layout { grid-template-columns: minmax(320px, 400px) 1fr; gap: 72px; align-items: start; }
-    body.has-result .side { position: sticky; top: 24px; }
-    body.has-result h1 { font-size: 64px; }
-    .hero { padding-top: 72px; }
-    body:not(.has-result) .side { max-width: 720px; }
-    body:not(.has-result) h1 { font-size: 112px; }
-    .content { padding-top: 40px; }
+    .view-home { min-height: calc(100vh - 80px - 72px); }
+    .view-result { grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr); gap: 80px; align-items: start; padding-top: 48px; }
+    .result-side { position: sticky; top: 32px; }
   }
 </style>
 </head>
@@ -177,34 +180,39 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
 
 <div class="page">
   <div class="bar">
-    <div class="brand">group order<span>JP → SG</span></div>
+    <a class="brand" id="home-link" href="./" aria-label="Back to the start page">group order<span>JP → SG</span></a>
     <button class="theme-btn" id="theme" type="button" aria-label="Switch light / dark">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
     </button>
   </div>
 
-  <div class="layout">
-    <div class="side">
-      <section class="hero">
-        <h1>Orders</h1>
-        <p class="tag">from Japan, to you.</p>
-        <p class="lead">Type your name or Telegram @ to see your goods, what you've paid and where everything is.</p>
+  <section id="home" class="view-home">
+    <h1>Orders</h1>
+    <p class="tag">from Japan, to you.</p>
+    <p class="lead">Type your name or Telegram @ to see your goods, what you've paid and where everything is.</p>
 
-        <form class="search" id="form" autocomplete="off">
-          <label for="q" class="sr">Your name or Telegram handle</label>
-          <input id="q" name="q" type="search" autocapitalize="none" spellcheck="false" placeholder="@yourhandle" required>
-          <button id="go" type="submit">Find
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </button>
-        </form>
+    <form class="search" id="form" autocomplete="off">
+      <label for="q" class="sr">Your name or Telegram handle</label>
+      <input id="q" name="q" type="search" autocapitalize="none" spellcheck="false" placeholder="@yourhandle" required>
+      <button id="go" type="submit">Find
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </form>
 
-        <p id="status" class="msg" role="status" aria-live="polite">Loading the order sheet…</p>
-      </section>
+    <p id="status" class="msg" role="status" aria-live="polite">Loading the order sheet…</p>
+  </section>
 
-      <section id="summary" class="total hidden" aria-live="polite"></section>
-    </div>
-
-    <main id="result" class="content hidden"></main>
+  <div id="view-result" class="view-result hidden">
+    <aside class="result-side">
+      <div class="eyebrow">Orders for</div>
+      <h1 class="name" id="name"></h1>
+      <section id="summary" class="total" aria-live="polite"></section>
+      <button class="back" id="back" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        New search
+      </button>
+    </aside>
+    <main id="result" class="content"></main>
   </div>
 
   <footer id="foot"></footer>
@@ -228,6 +236,7 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
 
   const $ = (id) => document.getElementById(id);
   const form = $("form"), input = $("q"), btn = $("go"), statusEl = $("status"),
+        homeEl = $("home"), viewResult = $("view-result"), nameEl = $("name"),
         summaryEl = $("summary"), result = $("result");
 
   let data = null;        // { orders: [...], handles: [...] }
@@ -405,9 +414,10 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
     const delivered = mine.filter((r) => r.stage.toUpperCase().trim() === "DELIVERED");
     const adjust = mine.filter((r) => !r.stage.trim());
 
+    nameEl.textContent = person;
+    document.title = person + " · Order Tracker";
     summaryEl.innerHTML = `
-      <div class="hello">Hi, ${esc(person)}</div>
-      <div class="label">${label}</div>
+      <div class="label" style="margin-top:0">${label}</div>
       <div class="amount">${amount}</div>
       <div class="hint">${esc(hint)}</div>
       <div class="counts">
@@ -432,19 +442,20 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
       result.querySelectorAll("section[data-sec]").forEach((s) => s.classList.toggle("hidden", f !== "all" && s.dataset.sec !== f));
     }));
 
-    statusEl.classList.add("hidden");
-    summaryEl.classList.remove("hidden");
-    result.classList.remove("hidden");
-    document.body.classList.add("has-result");
+    homeEl.classList.add("hidden");
+    viewResult.classList.remove("hidden");
+    window.scrollTo(0, 0);
   }
 
-  function showMsg(html) {
-    statusEl.innerHTML = html;
-    statusEl.classList.remove("hidden");
-    summaryEl.classList.add("hidden");
-    result.classList.add("hidden");
-    summaryEl.innerHTML = ""; result.innerHTML = "";
-    document.body.classList.remove("has-result");
+  // Start page. Optional message under the search box (not found, errors).
+  function showHome(html) {
+    viewResult.classList.add("hidden");
+    homeEl.classList.remove("hidden");
+    summaryEl.innerHTML = ""; result.innerHTML = ""; nameEl.textContent = "";
+    document.title = "Order Tracker";
+    if (html) { statusEl.innerHTML = html; statusEl.classList.remove("hidden"); }
+    else statusEl.classList.add("hidden");
+    window.scrollTo(0, 0);
   }
 
   function search(q) {
@@ -452,28 +463,44 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
     if (!data) return;
     const person = findPerson(q);
     if (!person) {
-      showMsg(`Hmm, I couldn't find <strong>${esc(q.trim())}</strong>. Check the spelling or try your Telegram @. Still stuck? Message DX.`);
-      return;
+      showHome(`Hmm, I couldn't find <strong>${esc(q.trim())}</strong>. Check the spelling or try your Telegram @. Still stuck? Message DX.`);
+      return false;
     }
     render(person);
+    return true;
   }
 
   function showLoadError() {
     if (loadError && loadError.message === "not-configured") {
-      showMsg("This page isn't set up yet. The sheet links still need to be added.");
+      showHome("This page isn't set up yet. The sheet links still need to be added.");
     } else {
-      showMsg("Oops, I couldn't load the order sheet just now. Please check your connection and refresh in a bit.");
+      showHome("Oops, I couldn't load the order sheet just now. Please check your connection and refresh in a bit.");
     }
+  }
+
+  // The #hash holds the search, so results can be bookmarked and the browser Back button works.
+  function route() {
+    const q = decodeURIComponent(location.hash.slice(1) || "");
+    if (q && (data || loadError)) { input.value = q; search(q); }
+    else if (data) { input.value = ""; showHome(); }
+  }
+
+  function goHome() {
+    if (location.hash) history.pushState(null, "", location.pathname + location.search);
+    input.value = "";
+    showHome();
   }
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const q = input.value;
     if (!key(q)) return;
-    history.replaceState(null, "", "#" + encodeURIComponent(q.trim()));  // bookmarkable, never sent to a server
-    search(q);
     input.blur();
+    if (search(q)) history.pushState(null, "", "#" + encodeURIComponent(q.trim()));
   });
+  $("back").addEventListener("click", goHome);
+  $("home-link").addEventListener("click", (e) => { e.preventDefault(); goHome(); });
+  window.addEventListener("popstate", route);
 
   /* ---------- start ---------- */
   btn.disabled = true;
@@ -481,9 +508,8 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
     data = d;
     btn.disabled = false;
     $("foot").textContent = "Updated " + new Date().toLocaleString("en-SG", { dateStyle: "medium", timeStyle: "short" }) + " · refresh for the latest";
-    const fromHash = decodeURIComponent(location.hash.slice(1) || "");
-    if (fromHash) { input.value = fromHash; search(fromHash); }
-    else showMsg("Enter your name or Telegram handle to see your orders.");
+    statusEl.classList.add("hidden");
+    route();
   }).catch((err) => {
     loadError = err;
     btn.disabled = false;
