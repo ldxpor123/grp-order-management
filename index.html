@@ -8,7 +8,7 @@
 <title>Order Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <script>
 /* =====================================================================
    CONFIG — paste your Google Sheets "Publish to web" CSV links here.
@@ -22,191 +22,189 @@ const HANDLES_CSV_URL = "";
 </script>
 <style>
   :root {
-    --bg: #f6f2ff;
-    --bg-2: #efe8ff;
-    --card: #ffffff;
-    --ink: #3d3357;
-    --ink-soft: #7a6e98;
-    --line: #e4dbfa;
-    --accent: #9b7fe6;
-    --accent-ink: #ffffff;
-    --accent-soft: #ece4ff;
-    --track-off: #e6e0f5;
-    --shadow: 0 6px 20px rgba(120, 90, 200, .12);
-    --total-a: #7a5fd0; --total-b: #a688ee;
-
-    --paid-bg: #dcf6e6;   --paid-ink: #2f7a4f;
-    --unpaid-bg: #ffdfe7; --unpaid-ink: #b23a5c;
-    --ded-bg: #dfecff;    --ded-ink: #3b62a8;
-    --credit-bg: #fff1c9; --credit-ink: #8a6410;
-    --tbc-bg: #eeeaf5;    --tbc-ink: #6f6888;
+    --bg: #f8f7f1;
+    --surface: #f5f5f5;
+    --stone: #e8e7e4;
+    --sand: #ded8cf;
+    --ink: #441009;
+    --ink-soft: #7a625b;
+    --ink-faint: #b7aaa3;
+    --line: rgba(68, 16, 9, .14);
+    --on-ink: #f8f7f1;
+    --blob: #ded8cf;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #1b1726;
-      --bg-2: #221d31;
-      --card: #2a2440;
-      --ink: #ece6ff;
-      --ink-soft: #b2a8d4;
-      --line: #3b3358;
-      --accent: #b9a2ff;
-      --accent-ink: #1b1726;
-      --accent-soft: #3a3060;
-      --track-off: #423a62;
-      --shadow: 0 6px 20px rgba(0, 0, 0, .35);
-      --total-a: #b9a2ff; --total-b: #d6c4ff;
-
-      --paid-bg: #1f4232;   --paid-ink: #9ee6bb;
-      --unpaid-bg: #4d2433; --unpaid-ink: #ffb3c7;
-      --ded-bg: #22365a;    --ded-ink: #a9c6ff;
-      --credit-bg: #4a3a12; --credit-ink: #ffd97a;
-      --tbc-bg: #37314d;    --tbc-ink: #c7bfe0;
+      --bg: #1a1311; --surface: #221917; --stone: #2c221f; --sand: #3a2d28;
+      --ink: #f3eee6; --ink-soft: #bfb2a8; --ink-faint: #6f625c;
+      --line: rgba(243, 238, 230, .14); --on-ink: #1a1311; --blob: #3a2420;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #1b1726; --bg-2: #221d31; --card: #2a2440; --ink: #ece6ff; --ink-soft: #b2a8d4;
-    --line: #3b3358; --accent: #b9a2ff; --accent-ink: #1b1726; --accent-soft: #3a3060;
-    --track-off: #423a62; --shadow: 0 6px 20px rgba(0,0,0,.35); --total-a: #b9a2ff; --total-b: #d6c4ff;
-    --paid-bg: #1f4232; --paid-ink: #9ee6bb; --unpaid-bg: #4d2433; --unpaid-ink: #ffb3c7;
-    --ded-bg: #22365a; --ded-ink: #a9c6ff; --credit-bg: #4a3a12; --credit-ink: #ffd97a;
-    --tbc-bg: #37314d; --tbc-ink: #c7bfe0;
+    --bg: #1a1311; --surface: #221917; --stone: #2c221f; --sand: #3a2d28;
+    --ink: #f3eee6; --ink-soft: #bfb2a8; --ink-faint: #6f625c;
+    --line: rgba(243, 238, 230, .14); --on-ink: #1a1311; --blob: #3a2420;
   }
 
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
   body {
-    margin: 0;
-    min-height: 100vh;
-    background: radial-gradient(120% 60% at 50% 0%, var(--bg-2), var(--bg) 70%) fixed, var(--bg);
-    color: var(--ink);
-    font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Arial Rounded MT Bold",
-                 "Hiragino Sans", "Noto Sans JP", "Yu Gothic", system-ui, sans-serif;
-    font-size: 16px;
-    line-height: 1.5;
-    overflow-wrap: anywhere;
-  }
-  .wrap { max-width: 560px; margin: 0 auto; padding: 28px 16px 48px; }
-
-  header { text-align: center; margin-bottom: 20px; }
-  .logo { font-size: 40px; line-height: 1; }
-  h1 { font-size: 26px; font-weight: 800; margin: 8px 0 4px; letter-spacing: .01em; }
-  .sub { color: var(--ink-soft); margin: 0; font-size: 15px; }
-
-  form.search {
-    display: flex; gap: 8px;
-    background: var(--card); padding: 8px; border-radius: 999px;
-    box-shadow: var(--shadow); border: 2px solid var(--line);
-  }
-  form.search:focus-within { border-color: var(--accent); }
-  .search input {
-    flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink);
-    font: inherit; font-size: 17px; padding: 8px 4px 8px 14px;
-  }
-  .search input::placeholder { color: var(--ink-soft); opacity: .8; }
-  .search button {
-    border: 0; border-radius: 999px; padding: 10px 18px; cursor: pointer;
-    background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: 700; font-size: 16px;
-  }
-  .search button:disabled { opacity: .6; cursor: progress; }
-
-  .msg {
-    margin-top: 20px; text-align: center; background: var(--card); border-radius: 24px;
-    padding: 22px 18px; box-shadow: var(--shadow); border: 2px dashed var(--line);
-  }
-  .msg .emoji { font-size: 34px; }
-  .msg p { margin: 6px 0 0; color: var(--ink-soft); }
-  .msg strong { color: var(--ink); }
-
-  .hello { margin: 24px 4px 10px; font-size: 20px; font-weight: 800; }
-  .total {
-    background: linear-gradient(135deg, var(--total-a), var(--total-b));
-    color: #fff; border-radius: 26px; padding: 18px 20px; box-shadow: var(--shadow);
-  }
-  :root[data-theme="dark"] .total { color: #1b1726; }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .total { color: #1b1726; } }
-  .total .label { font-weight: 700; font-size: 14px; opacity: .9; }
-  .total .amount { font-size: 38px; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; }
-  .total .hint { font-size: 13px; opacity: .9; margin-top: 2px; }
-
-  h2 {
-    font-size: 17px; font-weight: 800; margin: 28px 4px 10px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  h2 .count {
-    font-size: 13px; font-weight: 700; background: var(--accent-soft); color: var(--ink);
-    border-radius: 999px; padding: 1px 9px;
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink);
+    font-family: "Inter", "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic",
+                 system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px; line-height: 1.5; letter-spacing: -.005em;
+    -webkit-font-smoothing: antialiased; overflow-wrap: anywhere;
   }
 
-  .item {
-    background: var(--card); border-radius: 22px; padding: 16px; margin-bottom: 12px;
-    box-shadow: var(--shadow); border: 1px solid var(--line);
-  }
-  .item-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-  .item-name { font-weight: 700; font-size: 16px; }
-  .pill {
-    flex: none; font-size: 12px; font-weight: 800; letter-spacing: .03em; border-radius: 999px;
-    padding: 3px 10px; white-space: nowrap;
-  }
-  .pill.paid { background: var(--paid-bg); color: var(--paid-ink); }
-  .pill.notpaid { background: var(--unpaid-bg); color: var(--unpaid-ink); }
-  .pill.deducted { background: var(--ded-bg); color: var(--ded-ink); }
-  .pill.credit { background: var(--credit-bg); color: var(--credit-ink); }
-  .pill.tbc { background: var(--tbc-bg); color: var(--tbc-ink); }
+  /* soft background shapes (decorative) */
+  .deco { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+  .deco .blob { position: absolute; width: 520px; height: 520px; border-radius: 50%;
+    background: var(--blob); filter: blur(90px); opacity: .7; top: -220px; right: -180px; }
+  .deco .ring { position: absolute; width: 440px; height: 440px; border-radius: 50%;
+    border: 1px solid var(--line); bottom: -200px; left: -170px; }
 
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .chip {
-    font-size: 13px; background: var(--accent-soft); border-radius: 10px; padding: 2px 9px;
-    font-variant-numeric: tabular-nums;
-  }
-  .chip.money { font-weight: 700; }
+  .page { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto;
+    padding: 0 20px 56px; padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
 
-  .tracker { list-style: none; display: flex; margin: 16px 0 6px; padding: 0; }
-  .tracker li { flex: 1; text-align: center; position: relative; font-size: 11.5px; color: var(--ink-soft); }
-  .tracker li::before {
-    content: ""; display: block; width: 16px; height: 16px; margin: 0 auto 4px; border-radius: 50%;
-    background: var(--track-off); position: relative; z-index: 1; border: 3px solid var(--card);
-    box-sizing: content-box;
-  }
-  .tracker li + li::after {
-    content: ""; position: absolute; top: 9px; right: 50%; width: 100%; height: 4px;
-    background: var(--track-off); border-radius: 4px;
-  }
-  .tracker li.done { color: var(--ink); }
-  .tracker li.done::before, .tracker li.done::after { background: var(--accent); }
-  .tracker li.now { font-weight: 800; color: var(--ink); }
-  .tracker li.now::before { box-shadow: 0 0 0 4px var(--accent-soft); }
+  /* top bar */
+  .bar { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .brand { font-weight: 600; font-size: 15px; letter-spacing: -.01em; }
+  .brand span { color: var(--ink-faint); font-weight: 400; margin-left: 10px; }
+  .theme-btn { border: 1px solid var(--line); background: transparent; color: var(--ink);
+    width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; }
+  .theme-btn svg { width: 16px; height: 16px; }
 
-  .stage { font-size: 14px; margin-top: 6px; }
-  .stage b { font-weight: 800; }
-  .note { font-size: 13.5px; color: var(--ink-soft); margin-top: 4px; }
+  /* layout */
+  .layout { display: grid; gap: 8px; }
+  .hero { padding: 40px 0 8px; }
+  h1 { margin: 0; font-weight: 800; font-size: clamp(44px, 13vw, 88px); line-height: .95; letter-spacing: -.045em; text-transform: uppercase; }
+  .hero .tag { font-size: clamp(18px, 4.6vw, 26px); font-weight: 400; margin: 10px 0 0; letter-spacing: -.02em; }
+  .hero .lead { color: var(--ink-soft); margin: 14px 0 0; max-width: 34ch; }
 
-  .empty { color: var(--ink-soft); font-size: 14px; margin: 0 4px; }
+  form.search { margin-top: 28px; display: flex; align-items: center; border: 1.5px solid var(--ink);
+    border-radius: 999px; padding: 4px 4px 4px 20px; max-width: 440px; background: var(--bg); }
+  .search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink);
+    font: inherit; font-size: 16px; padding: 10px 8px 10px 0; }
+  .search input::placeholder { color: var(--ink-faint); }
+  .search input::-webkit-search-cancel-button { display: none; }
+  .search button { flex: none; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px;
+    background: var(--ink); color: var(--on-ink); font: inherit; font-weight: 500; font-size: 15px; padding: 10px 18px; cursor: pointer; }
+  .search button svg { width: 16px; height: 16px; }
+  .search button:disabled { opacity: .5; cursor: progress; }
+  form.search:focus-within { box-shadow: 0 0 0 4px var(--sand); }
 
-  footer { text-align: center; color: var(--ink-soft); font-size: 12.5px; margin-top: 32px; }
+  .msg { margin-top: 22px; color: var(--ink-soft); max-width: 440px; }
+  .msg strong { color: var(--ink); font-weight: 600; }
+
+  /* total */
+  .total { margin-top: 32px; padding-top: 22px; border-top: 1px solid var(--line); max-width: 440px; }
+  .hello { font-size: 13px; color: var(--ink-soft); }
+  .total .label { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; margin-top: 14px; }
+  .total .amount { font-size: clamp(44px, 12vw, 60px); font-weight: 300; letter-spacing: -.04em; line-height: 1.05;
+    font-variant-numeric: tabular-nums; margin-top: 4px; }
+  .total .hint { color: var(--ink-soft); font-size: 13px; margin-top: 6px; }
+  .counts { display: flex; gap: 22px; margin-top: 18px; font-size: 13px; color: var(--ink-soft); }
+  .counts b { display: block; color: var(--ink); font-size: 20px; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  /* filter chips (like the brand filter row) */
+  .chips-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 6px; margin-top: 8px; scrollbar-width: none; }
+  .chips-row::-webkit-scrollbar { display: none; }
+  .fchip { flex: none; border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 999px;
+    padding: 6px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+  .fchip[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
+
+  /* sections & rows */
+  .sec-head { display: flex; align-items: baseline; justify-content: space-between; margin: 30px 0 0;
+    padding-bottom: 12px; border-bottom: 1px solid var(--ink); }
+  .sec-head h2 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+  .sec-head .n { font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .empty { color: var(--ink-soft); font-size: 14px; padding: 16px 0; border-bottom: 1px solid var(--line); margin: 0; }
+
+  .row { padding: 18px 0; border-bottom: 1px solid var(--line); }
+  .row-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+  .row-title { font-weight: 500; font-size: 15.5px; }
+  .meta { display: flex; flex-wrap: wrap; column-gap: 14px; row-gap: 2px; margin-top: 4px; font-size: 13px;
+    color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .meta .money { color: var(--ink); font-weight: 500; }
+
+  .pill { flex: none; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    border-radius: 999px; padding: 4px 10px; white-space: nowrap; border: 1px solid var(--ink); }
+  .pill.notpaid { background: var(--ink); color: var(--on-ink); }
+  .pill.paid { background: transparent; color: var(--ink); }
+  .pill.deducted { background: var(--sand); border-color: var(--sand); color: var(--ink); }
+  .pill.credit { background: transparent; border-style: dashed; color: var(--ink); }
+  .pill.tbc { background: transparent; border-color: var(--ink-faint); color: var(--ink-soft); }
+
+  /* 4-step tracker */
+  .tracker { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); margin: 16px 0 0; padding: 0; }
+  .tracker li { position: relative; padding-top: 16px; font-size: 11.5px; color: var(--ink-faint); }
+  .tracker li::before { content: ""; position: absolute; top: 3px; left: 0; right: 0; height: 1px; background: var(--line); }
+  .tracker li::after { content: ""; position: absolute; top: 0; left: 0; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--bg); border: 1px solid var(--ink-faint); }
+  .tracker li:last-child::before { right: auto; width: 0; }
+  .tracker li.done { color: var(--ink-soft); }
+  .tracker li.done::before { background: var(--ink); }
+  .tracker li.done::after { background: var(--ink); border-color: var(--ink); }
+  .tracker li.now { color: var(--ink); font-weight: 600; }
+  .tracker li.now::before { background: var(--line); }
+  .tracker li.now::after { box-shadow: 0 0 0 4px var(--sand); }
+
+  .stage { font-size: 13.5px; margin-top: 10px; font-weight: 500; }
+  .note { font-size: 13px; color: var(--ink-soft); margin-top: 4px; }
+
+  footer { margin-top: 40px; font-size: 12px; color: var(--ink-faint); }
+
   .hidden { display: none !important; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* desktop: left column (title, search, total) stays put, items scroll on the right */
+  @media (min-width: 900px) {
+    .page { padding-left: 40px; padding-right: 40px; }
+    .bar { height: 80px; }
+    body.has-result .layout { grid-template-columns: minmax(320px, 400px) 1fr; gap: 72px; align-items: start; }
+    body.has-result .side { position: sticky; top: 24px; }
+    body.has-result h1 { font-size: 64px; }
+    .hero { padding-top: 72px; }
+    body:not(.has-result) .side { max-width: 720px; }
+    body:not(.has-result) h1 { font-size: 112px; }
+    .content { padding-top: 40px; }
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="logo" aria-hidden="true">🌸</div>
-    <h1>Group Order Tracker</h1>
-    <p class="sub">Type your name or Telegram @ to see your goods ✨</p>
-  </header>
+<div class="deco" aria-hidden="true"><div class="blob"></div><div class="ring"></div></div>
 
-  <form class="search" id="form" autocomplete="off">
-    <label for="q" class="hidden">Your name or Telegram handle</label>
-    <input id="q" name="q" type="search" inputmode="text" autocapitalize="none" spellcheck="false"
-           placeholder="e.g. @yourhandle" required>
-    <button id="go" type="submit">Find</button>
-  </form>
-
-  <div id="status" class="msg" role="status" aria-live="polite">
-    <div class="emoji">⏳</div>
-    <p>Loading the order sheet…</p>
+<div class="page">
+  <div class="bar">
+    <div class="brand">group order<span>JP → SG</span></div>
+    <button class="theme-btn" id="theme" type="button" aria-label="Switch light / dark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+    </button>
   </div>
 
-  <main id="result" class="hidden" aria-live="polite"></main>
+  <div class="layout">
+    <div class="side">
+      <section class="hero">
+        <h1>Orders</h1>
+        <p class="tag">from Japan, to you.</p>
+        <p class="lead">Type your name or Telegram @ to see your goods, what you've paid and where everything is.</p>
+
+        <form class="search" id="form" autocomplete="off">
+          <label for="q" class="sr">Your name or Telegram handle</label>
+          <input id="q" name="q" type="search" autocapitalize="none" spellcheck="false" placeholder="@yourhandle" required>
+          <button id="go" type="submit">Find
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </form>
+
+        <p id="status" class="msg" role="status" aria-live="polite">Loading the order sheet…</p>
+      </section>
+
+      <section id="summary" class="total hidden" aria-live="polite"></section>
+    </div>
+
+    <main id="result" class="content hidden"></main>
+  </div>
 
   <footer id="foot"></footer>
 </div>
@@ -225,12 +223,24 @@ const HANDLES_CSV_URL = "";
     "DELIVERED": "Delivered",
     "NO UPDATE": "No update yet"
   };
+  const PAY_LABEL = { "PAID": "Paid", "NOT PAID": "Not paid", "DEDUCTED": "Deducted", "CREDIT": "Credit" };
 
   const $ = (id) => document.getElementById(id);
-  const form = $("form"), input = $("q"), btn = $("go"), statusEl = $("status"), result = $("result");
+  const form = $("form"), input = $("q"), btn = $("go"), statusEl = $("status"),
+        summaryEl = $("summary"), result = $("result");
 
   let data = null;        // { orders: [...], handles: [...] }
   let loadError = null;
+
+  /* ---------- theme toggle (remembered on this device only) ---------- */
+  try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  $("theme").addEventListener("click", () => {
+    const cur = document.documentElement.dataset.theme ||
+      (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const next = cur === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("theme", next); } catch (e) {}
+  });
 
   /* ---------- helpers ---------- */
   function esc(s) {
@@ -244,7 +254,7 @@ const HANDLES_CSV_URL = "";
     if (s == null) return null;
     let t = String(s).trim();
     if (!t || t === "-" || t === "–") return null;
-    let neg = /^\(.*\)$/.test(t);
+    const neg = /^\(.*\)$/.test(t);
     t = t.replace(/SGD|JPY|S\$/gi, "").replace(/[()\s,¥￥円]/g, "").replace(/[−–]/g, "-");
     const n = parseFloat(t);
     if (!isFinite(n)) return null;
@@ -328,45 +338,47 @@ const HANDLES_CSV_URL = "";
   function payPill(p) {
     const s = p.toUpperCase().trim();
     const cls = { "PAID": "paid", "NOT PAID": "notpaid", "DEDUCTED": "deducted", "CREDIT": "credit" }[s] || "tbc";
-    return `<span class="pill ${cls}">${esc(s || "TO CONFIRM")}</span>`;
+    return `<span class="pill ${cls}">${esc(PAY_LABEL[s] || s || "To confirm")}</span>`;
   }
 
   function tracker(stage) {
     const s = stage.toUpperCase().trim();
     const at = s in STAGE_INDEX ? STAGE_INDEX[s] : -1;
-    const lis = STEPS.map((name, i) =>
-      `<li class="${i <= at ? "done" : ""} ${i === at ? "now" : ""}">${name}</li>`).join("");
+    const lis = STEPS.map((name, i) => {
+      const cls = [i < at ? "done" : "", i === at ? "done now" : ""].join(" ").trim();
+      return `<li class="${cls}">${name}</li>`;
+    }).join("");
     return `<ol class="tracker" aria-label="Progress">${lis}</ol>`;
   }
 
-  function itemCard(r, withTracker) {
+  function itemRow(r, withTracker) {
     const qty = num(r.qty), s = num(r.sgd), j = num(r.jpy), rate = num(r.rate);
-    const chips = [];
-    if (qty != null) chips.push(`<span class="chip">×${esc(qty)}</span>`);
-    else if (r.qty) chips.push(`<span class="chip">${esc(r.qty)}</span>`);
-    if (s != null) chips.push(`<span class="chip money">${sgd(s)}</span>`);
-    if (j != null) chips.push(`<span class="chip money">${jpy(j)}</span>`);
-    if (rate != null) chips.push(`<span class="chip">rate ${esc(rate.toFixed(6))} S$/¥</span>`);
-    if (r.batch) chips.push(`<span class="chip">📦 ${esc(r.batch)}</span>`);
+    const meta = [];
+    if (qty != null) meta.push(`<span>×${esc(qty)}</span>`);
+    else if (r.qty) meta.push(`<span>${esc(r.qty)}</span>`);
+    if (s != null) meta.push(`<span class="money">${sgd(s)}</span>`);
+    if (j != null) meta.push(`<span class="money">${jpy(j)}</span>`);
+    if (rate != null) meta.push(`<span>${esc(rate.toFixed(6))} S$/¥</span>`);
+    if (r.batch) meta.push(`<span>${esc(r.batch)}</span>`);
 
     const st = r.stage.toUpperCase().trim();
     const stageText = STAGE_LABEL[st] || r.stage;
     return `
-      <article class="item">
-        <div class="item-top">
-          <div class="item-name">${esc(r.item)}</div>
+      <article class="row">
+        <div class="row-head">
+          <div class="row-title">${esc(r.item)}</div>
           ${payPill(r.pay)}
         </div>
-        <div class="chips">${chips.join("")}</div>
-        ${withTracker ? tracker(r.stage) + `<div class="stage"><b>${esc(stageText)}</b></div>` : ""}
+        ${meta.length ? `<div class="meta">${meta.join("")}</div>` : ""}
+        ${withTracker ? tracker(r.stage) + `<div class="stage">${esc(stageText)}</div>` : ""}
         ${r.note ? `<div class="note">${esc(r.note)}</div>` : ""}
       </article>`;
   }
 
-  function section(title, emoji, rows, withTracker, emptyText) {
-    let html = `<h2><span aria-hidden="true">${emoji}</span>${esc(title)} <span class="count">${rows.length}</span></h2>`;
-    html += rows.length ? rows.map((r) => itemCard(r, withTracker)).join("") : `<p class="empty">${esc(emptyText)}</p>`;
-    return html;
+  function section(id, title, rows, withTracker, emptyText) {
+    let html = `<section data-sec="${id}"><div class="sec-head"><h2>${esc(title)}</h2><span class="n">${rows.length}</span></div>`;
+    html += rows.length ? rows.map((r) => itemRow(r, withTracker)).join("") : `<p class="empty">${esc(emptyText)}</p>`;
+    return html + `</section>`;
   }
 
   function render(person) {
@@ -382,37 +394,56 @@ const HANDLES_CSV_URL = "";
     }
     owe = Math.round(owe * 100) / 100;
 
-    let amount, hint;
-    if (owe > 0) { amount = sgd(owe); hint = "Unpaid items, minus anything DX owes you 💜"; }
-    else if (owe < 0) { amount = sgd(-owe); hint = "DX owes you this much 💜"; }
-    else { amount = "S$0.00"; hint = "All settled, thank you! 🎉"; }
-    if (oweJpyOnly) hint += ` · plus ${jpy(oweJpyOnly)} still to convert`;
+    let label = "Still to pay", amount, hint;
+    if (owe > 0) { amount = sgd(owe); hint = "Unpaid items, minus anything DX owes you."; }
+    else if (owe < 0) { label = "Credit"; amount = sgd(-owe); hint = "DX owes you this much."; }
+    else { amount = "S$0.00"; hint = "All settled. Thank you!"; }
+    if (oweJpyOnly) hint += ` Plus ${jpy(oweJpyOnly)} still to convert.`;
 
     const onTheWay = mine.filter((r) => r.stage.trim() && r.stage.toUpperCase().trim() !== "DELIVERED");
     const delivered = mine.filter((r) => r.stage.toUpperCase().trim() === "DELIVERED");
     const adjust = mine.filter((r) => !r.stage.trim());
 
-    let html = `<div class="hello">Hi ${esc(person)}! 👋</div>
-      <div class="total">
-        <div class="label">${owe < 0 ? "Credit" : "Still to pay"}</div>
-        <div class="amount">${amount}</div>
-        <div class="hint">${esc(hint)}</div>
+    summaryEl.innerHTML = `
+      <div class="hello">Hi, ${esc(person)}</div>
+      <div class="label">${label}</div>
+      <div class="amount">${amount}</div>
+      <div class="hint">${esc(hint)}</div>
+      <div class="counts">
+        <div><b>${onTheWay.length}</b>on the way</div>
+        <div><b>${delivered.length}</b>delivered</div>
+        ${adjust.length ? `<div><b>${adjust.length}</b>adjustments</div>` : ""}
       </div>`;
-    html += section("On the way", "🚚", onTheWay, true, "Nothing on the way right now.");
-    html += section("Delivered", "🎀", delivered, true, "Nothing delivered yet.");
-    if (adjust.length) html += section("Credits & adjustments", "🧾", adjust, false, "");
-    if (!mine.length) html += `<p class="empty" style="margin-top:16px">No orders listed for you yet.</p>`;
+
+    const filters = [["all", "All"], ["way", "On the way"], ["done", "Delivered"]];
+    if (adjust.length) filters.push(["adj", "Credits"]);
+    let html = `<div class="chips-row" role="group" aria-label="Filter">` +
+      filters.map(([id, name], i) => `<button type="button" class="fchip" data-f="${id}" aria-pressed="${i === 0}">${name}</button>`).join("") +
+      `</div>`;
+    html += section("way", "On the way", onTheWay, true, "Nothing on the way right now.");
+    html += section("done", "Delivered", delivered, true, "Nothing delivered yet.");
+    if (adjust.length) html += section("adj", "Credits & adjustments", adjust, false, "");
 
     result.innerHTML = html;
-    result.classList.remove("hidden");
+    result.querySelectorAll(".fchip").forEach((b) => b.addEventListener("click", () => {
+      result.querySelectorAll(".fchip").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      const f = b.dataset.f;
+      result.querySelectorAll("section[data-sec]").forEach((s) => s.classList.toggle("hidden", f !== "all" && s.dataset.sec !== f));
+    }));
+
     statusEl.classList.add("hidden");
+    summaryEl.classList.remove("hidden");
+    result.classList.remove("hidden");
+    document.body.classList.add("has-result");
   }
 
-  function showMsg(emoji, html) {
-    statusEl.innerHTML = `<div class="emoji">${emoji}</div><p>${html}</p>`;
+  function showMsg(html) {
+    statusEl.innerHTML = html;
     statusEl.classList.remove("hidden");
+    summaryEl.classList.add("hidden");
     result.classList.add("hidden");
-    result.innerHTML = "";
+    summaryEl.innerHTML = ""; result.innerHTML = "";
+    document.body.classList.remove("has-result");
   }
 
   function search(q) {
@@ -420,8 +451,7 @@ const HANDLES_CSV_URL = "";
     if (!data) return;
     const person = findPerson(q);
     if (!person) {
-      showMsg("🥺", `Hmm, I couldn't find <strong>${esc(q.trim())}</strong>.<br>
-        Check the spelling, or try your Telegram @ instead. Still stuck? Message DX 💌`);
+      showMsg(`Hmm, I couldn't find <strong>${esc(q.trim())}</strong>. Check the spelling or try your Telegram @. Still stuck? Message DX.`);
       return;
     }
     render(person);
@@ -429,9 +459,9 @@ const HANDLES_CSV_URL = "";
 
   function showLoadError() {
     if (loadError && loadError.message === "not-configured") {
-      showMsg("🛠️", "This page isn't set up yet. The sheet links still need to be added.");
+      showMsg("This page isn't set up yet. The sheet links still need to be added.");
     } else {
-      showMsg("☁️", "Oops, I couldn't load the order sheet just now.<br>Please check your connection and refresh in a bit 🙏");
+      showMsg("Oops, I couldn't load the order sheet just now. Please check your connection and refresh in a bit.");
     }
   }
 
@@ -449,10 +479,10 @@ const HANDLES_CSV_URL = "";
   load().then((d) => {
     data = d;
     btn.disabled = false;
-    $("foot").textContent = "Updated " + new Date().toLocaleString("en-SG", { dateStyle: "medium", timeStyle: "short" }) + " · refresh to get the latest";
+    $("foot").textContent = "Updated " + new Date().toLocaleString("en-SG", { dateStyle: "medium", timeStyle: "short" }) + " · refresh for the latest";
     const fromHash = decodeURIComponent(location.hash.slice(1) || "");
     if (fromHash) { input.value = fromHash; search(fromHash); }
-    else showMsg("🔎", "Enter your name or Telegram handle above to see your orders.");
+    else showMsg("Enter your name or Telegram handle to see your orders.");
   }).catch((err) => {
     loadError = err;
     btn.disabled = false;
