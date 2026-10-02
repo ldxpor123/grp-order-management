@@ -133,6 +133,7 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
   .pill.paid { background: transparent; color: var(--ink); }
   .pill.deducted { background: var(--sand); border-color: var(--sand); color: var(--ink); }
   .pill.credit { background: transparent; border-style: dashed; color: var(--ink); }
+  .pill.personal { background: var(--stone); border-color: var(--stone); color: var(--ink-soft); }
   .pill.tbc { background: transparent; border-color: var(--ink-faint); color: var(--ink-soft); }
 
   /* 4-step tracker */
@@ -223,7 +224,7 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
     "DELIVERED": "Delivered",
     "NO UPDATE": "No update yet"
   };
-  const PAY_LABEL = { "PAID": "Paid", "NOT PAID": "Not paid", "DEDUCTED": "Deducted", "CREDIT": "Credit" };
+  const PAY_LABEL = { "PAID": "Paid", "NOT PAID": "Not paid", "DEDUCTED": "Deducted", "CREDIT": "Credit", "PERSONAL": "Personal" };
 
   const $ = (id) => document.getElementById(id);
   const form = $("form"), input = $("q"), btn = $("go"), statusEl = $("status"),
@@ -337,7 +338,7 @@ const HANDLES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQGL1cb
   /* ---------- rendering ---------- */
   function payPill(p) {
     const s = p.toUpperCase().trim();
-    const cls = { "PAID": "paid", "NOT PAID": "notpaid", "DEDUCTED": "deducted", "CREDIT": "credit" }[s] || "tbc";
+    const cls = { "PAID": "paid", "NOT PAID": "notpaid", "DEDUCTED": "deducted", "CREDIT": "credit", "PERSONAL": "personal" }[s] || "tbc";
     return `<span class="pill ${cls}">${esc(PAY_LABEL[s] || s || "To confirm")}</span>`;
   }
 
