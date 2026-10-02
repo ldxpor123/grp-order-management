@@ -12,7 +12,7 @@ A single page (`index.html`) where a friend types their name or Telegram @ and s
 2. **File → Import → Upload**, then pick `orders_for_google_sheets.xlsx`.
 3. Choose **Replace spreadsheet**, then **Import data**.
 4. Check that you have two tabs, **Orders** and **Handles**. Keep the header row (row 1) exactly as it is.
-5. In **Handles**, fill in column B with each friend's Telegram handle, e.g. `@phoebe_xx`.
+5. In **Handles**, fill in column B with each friend's Telegram handle, e.g. `@your_friend`.
    For several handles, use commas: `@one, @two`. The `@` is optional.
 
 ## 2. Publish both tabs as CSV and paste the links into the page
