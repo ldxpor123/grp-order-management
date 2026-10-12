@@ -14,6 +14,8 @@ A single page (`index.html`) where a friend types their name or Telegram @ and s
 4. Check that you have two tabs, **Orders** and **Handles**. Keep the header row (row 1) exactly as it is.
 5. In **Handles**, fill in column B with each friend's Telegram handle, e.g. `@your_friend`.
    For several handles, use commas: `@one, @two`. The `@` is optional.
+   Optional column C **Nicknames**: other names friends might type, comma-separated, e.g. `Kibou, kibou chan, 希望`.
+   Matching ignores capitals and spaces. If a nickname belongs to two people, the page asks for their Telegram @ instead.
 
 ## 2. Publish both tabs as CSV and paste the links into the page
 
