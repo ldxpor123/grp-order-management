@@ -192,6 +192,21 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     padding-bottom: 12px; border-bottom: 1px solid var(--ink); }
   .sec-head h2 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
   .sec-head .n { font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .ship2 { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 9px; margin-top: 10px; padding: 9px 12px;
+    border-radius: 14px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; }
+  .ship2 svg { width: 16px; height: 16px; flex: none; color: var(--ink-soft); }
+  .ship2 .lbl { color: var(--ink-soft); }
+  .ship2 .s2-amt { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .ship2 .s2-wait { margin-left: auto; font-weight: 500; }
+  .s2-later .s2-wait { color: var(--ink-soft); }
+  .s2-waiting { border-style: dashed; } .s2-waiting .s2-wait, .s2-waiting svg { color: var(--s-warehouse); }
+  .s2-soon { border-style: dashed; } .s2-soon .s2-wait, .s2-soon svg { color: var(--s-shipping); }
+  .s2-note { margin-top: 8px; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px dashed var(--line);
+    border-radius: 12px; padding: 7px 12px; display: inline-block; }
+  .rc-ship .rc-meta { color: var(--s-shipping); }
+  .rc-later { margin-top: 14px; padding: 12px 14px; border-radius: 14px; border: 1px dashed var(--ink-faint);
+    font-size: 13.5px; color: var(--ink-soft); }
+  .rc-later b { display: block; color: var(--ink); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 2px; }
   .rc-group { padding: 6px 0 4px; }
   .rc-head { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 0 6px;
     font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
@@ -446,7 +461,8 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     if (!rows.length) return [];
     const head = rows[0].map((h) => h.trim().toLowerCase());
     const idx = {};
-    for (const [name, prefix] of Object.entries(cols)) idx[name] = head.findIndex((h) => h.startsWith(prefix));
+    for (const [name, want] of Object.entries(cols))
+      idx[name] = head.findIndex(typeof want === "function" ? want : (h) => h.startsWith(want));
     return rows.slice(1).map((r) => {
       const o = {};
       for (const name in idx) o[name] = idx[name] >= 0 ? (r[idx[name]] || "").trim() : "";
@@ -469,10 +485,16 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     const [o, h] = await Promise.all([fetchText(ORDERS_CSV_URL), fetchText(HANDLES_CSV_URL)]);
     const orders = table(o, {
       person: "person", item: "item", qty: "qty", sgd: "sgd", jpy: "jpy", rate: "rate",
-      pay: "payment", stage: "stage", batch: "batch", ship: "expected", note: "note"
+      pay: "payment", stage: "stage", batch: "batch", ship: "expected", note: "note",
+      // 2nd payment: "SG shipping (SGD)" and "SG shipping status"
+      s2: (h) => /^(sg shipping|2nd payment)/.test(h) && !h.includes("status"),
+      s2status: (h) => /^(sg shipping|2nd payment)/.test(h) && h.includes("status")
     }).filter((r) => r.person && r.item);
     const handles = table(h, { person: "person", handles: "telegram", nicks: "nick" }).filter((r) => r.person);
-    return { orders, handles };
+    // Only show 2nd payments once the sheet has the SG shipping columns.
+    const header = parseCSV(o.slice(0, 2000))[0] || [];
+    const hasS2 = header.some((h) => /^(sg shipping|2nd payment)/i.test(h.trim()));
+    return { orders, handles, hasS2 };
   }
 
   /* ---------- lookup ---------- */
@@ -512,6 +534,19 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     return `<ol class="tracker" aria-label="Progress">${lis}</ol>`;
   }
 
+  function s2Line(r) {
+    const sp = shipPay(r);
+    if (!sp) return "";
+    const value = sp.state === "ready"
+      ? `<span class="s2-amt">${sgd(sp.amt)}</span>${payPill(sp.status)}`
+      : `<span class="s2-wait">${esc(S2_TEXT[sp.state](r))}</span>`;
+    return `<div class="ship2 s2-${sp.state}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17" cy="17.5" r="1.6"/></svg>
+        <span class="lbl">2nd payment · SG shipping${sp.state === "ready" && r.batch ? " · " + esc(r.batch) : ""}</span>
+        ${value}
+      </div>`;
+  }
+
   function itemRow(r, withTracker) {
     const qty = num(r.qty), s = num(r.sgd), j = num(r.jpy), rate = num(r.rate);
     const meta = [];
@@ -539,33 +574,66 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
         ${meta.length ? `<div class="meta">${meta.join("")}</div>` : ""}
         ${withTracker ? tracker(r.stage) + `<div class="stage">${esc(stageText)}</div>` : ""}
         ${ship}
+        ${s2Line(r)}
       </article>`;
   }
+
+  // 2nd payment (SG shipping after consolidation). Returns null when there is nothing to show.
+  //   ready   – amount filled in and a status set (PAID / NOT PAID / ...)
+  //   later   – not at the warehouse yet; waiting – at the warehouse; soon – shipped, amount not in yet
+  const SET_STATUSES = ["PAID", "NOT PAID", "DEDUCTED", "CREDIT", "PERSONAL"];
+  function shipPay(r) {
+    if (!data.hasS2) return null;
+    const st = (r.s2status || "").toUpperCase().trim();
+    const raw = (r.s2 || "").trim();
+    if (/^N\/?A$/i.test(st) || /^N\/?A$/i.test(raw)) return null;
+    const amt = num(raw);
+    if (amt != null && st !== "PENDING") return { state: "ready", amt, status: SET_STATUSES.includes(st) ? st : "" };
+    const stage = r.stage.toUpperCase().trim();
+    if (!stage) return null;                                       // money-only rows
+    if (stage === "DELIVERED") return st === "PENDING" ? { state: "soon" } : null;   // older batches were settled separately
+    if (stage === "AT WAREHOUSE") return { state: "waiting" };
+    if (stage === "SHIPPING TO SG" || stage === "SHIPPING") return { state: "soon" };
+    return { state: "later" };
+  }
+  const S2_TEXT = { later: () => "Worked out once it reaches the warehouse",
+                    waiting: (r) => `Waiting to ship${r.batch ? " with " + r.batch : ""}, amount coming soon`,
+                    soon: () => "Amount coming soon" };
 
   // Unpaid view: a receipt showing how "Still to pay" is worked out.
   const STAGE_SHORT = { "ORDERED": "Ordered", "AT WAREHOUSE": "At warehouse", "SHIPPING TO SG": "Shipping",
                         "SHIPPING": "Shipping", "DELIVERED": "Delivered", "NO UPDATE": "No update yet" };
-  function receipt(rows, total, toConfirm) {
-    if (!rows.length) {
+  // entries: [{ r, kind: "item" | "ship", amt, status }]; later: rows whose SG shipping is still to come.
+  function receipt(entries, total, toConfirm, later) {
+    const laterHtml = !later.length ? "" : `<div class="rc-later"><b>Coming later</b>
+      SG shipping (2nd payment) for ${later.map((r) => esc(r.item)).join(", ")}, once it's worked out.</div>`;
+    if (!entries.length) {
       return `<section data-sec="unpaid" data-only="1" class="receipt">
         <div class="sec-head"><h2>Unpaid</h2><span class="n">0</span></div>
         <p class="empty">${toConfirm ? "Nothing marked as unpaid yet. Some amounts are still being confirmed by DX."
-                                     : "Nothing unpaid. You're all settled, thank you!"}</p></section>`;
+                         : later.length ? "Nothing to pay right now." : "Nothing unpaid. You're all settled, thank you!"}</p>
+        ${laterHtml}</section>`;
     }
-    const toPay = rows.filter((r) => r.pay.toUpperCase().trim() === "NOT PAID");
-    const credits = rows.filter((r) => r.pay.toUpperCase().trim() === "CREDIT");
-    const sum = (list) => Math.round(list.reduce((a, r) => a + (num(r.sgd) || 0), 0) * 100) / 100;
-    const line = (r) => {
-      const s = num(r.sgd), j = num(r.jpy), q = num(r.qty);
+    const toPay = entries.filter((e) => e.status === "NOT PAID");
+    const credits = entries.filter((e) => e.status === "CREDIT");
+    const sum = (list) => Math.round(list.reduce((a, e) => a + (e.amt || 0), 0) * 100) / 100;
+    const line = ({ r, kind, amt }) => {
       const bits = [];
-      if (q != null) bits.push("×" + q);
-      if (s != null && j != null) bits.push(jpy(j));
-      const st = r.stage.toUpperCase().trim();
-      if (st) bits.push(STAGE_SHORT[st] || r.stage);
-      const amt = s != null ? sgd(s) : (j != null ? `${jpy(j)}<small>not in total</small>` : "–");
-      return `<div class="rc-line">
+      if (kind === "ship") {
+        bits.push("SG shipping (2nd payment)");
+        if (r.batch) bits.push(r.batch);
+      } else {
+        const j = num(r.jpy), q = num(r.qty);
+        if (q != null) bits.push("×" + q);
+        if (amt != null && j != null) bits.push(jpy(j));
+        const st = r.stage.toUpperCase().trim();
+        if (st) bits.push(STAGE_SHORT[st] || r.stage);
+      }
+      const j = num(r.jpy);
+      const shown = amt != null ? sgd(amt) : (kind === "item" && j != null ? `${jpy(j)}<small>not in total</small>` : "–");
+      return `<div class="rc-line${kind === "ship" ? " rc-ship" : ""}">
           <div class="rc-name">${esc(r.item)}${bits.length ? `<div class="rc-meta">${esc(bits.join(" · "))}</div>` : ""}</div>
-          <div class="rc-amt">${amt}</div>
+          <div class="rc-amt">${shown}</div>
         </div>`;
     };
     const group = (title, hint, list, cls) => !list.length ? "" : `
@@ -575,13 +643,13 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
         <div class="rc-sub"><span>Subtotal</span><b>${sgd(sum(list))}</b></div>
       </div>`;
     let html = `<section data-sec="unpaid" data-only="1" class="receipt">
-      <div class="sec-head"><h2>Unpaid</h2><span class="n">${rows.length}</span></div>`;
-    html += group("You owe DX", `${toPay.length} item${toPay.length === 1 ? "" : "s"}`, toPay, "owe");
+      <div class="sec-head"><h2>Unpaid</h2><span class="n">${entries.length}</span></div>`;
+    html += group("You owe DX", `${toPay.length} line${toPay.length === 1 ? "" : "s"}`, toPay, "owe");
     html += group("DX owes you", "taken off your total", credits, "credit");
     if (credits.length && toPay.length) {
       html += `<div class="rc-calc">${sgd(sum(toPay))} <span>−</span> ${sgd(Math.abs(sum(credits)))} <span>=</span> ${sgd(total)}</div>`;
     }
-    html += `<div class="sec-total"><span>Still to pay</span><b>${sgd(total)}</b></div></section>`;
+    html += `<div class="sec-total"><span>Still to pay</span><b>${sgd(total)}</b></div>${laterHtml}</section>`;
     return html;
   }
 
@@ -598,18 +666,27 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     // Rows whose payment status is blank or unknown: not settled, just not confirmed yet.
     const toConfirm = mine.some((r) => !["PAID", "NOT PAID", "DEDUCTED", "CREDIT", "PERSONAL"].includes(r.pay.toUpperCase().trim()));
     let owe = 0, oweJpyOnly = 0;
+    const entries = [], later = [];                   // for the Unpaid receipt
     for (const r of mine) {
       const p = r.pay.toUpperCase().trim();
-      if (p !== "NOT PAID" && p !== "CREDIT") continue;
-      const s = num(r.sgd), j = num(r.jpy);
-      if (s != null) owe += s; else if (j != null) oweJpyOnly += j;
+      if (p === "NOT PAID" || p === "CREDIT") {
+        const s = num(r.sgd), j = num(r.jpy);
+        if (s != null) owe += s; else if (j != null) oweJpyOnly += j;
+        entries.push({ r, kind: "item", amt: s, status: p });
+      }
+      const sp = shipPay(r);                          // 2nd payment
+      if (sp && sp.state === "ready" && (sp.status === "NOT PAID" || sp.status === "CREDIT")) {
+        owe += sp.amt;
+        entries.push({ r, kind: "ship", amt: sp.amt, status: sp.status });
+      } else if (sp && sp.state !== "ready" && r.pay.toUpperCase().trim() !== "PERSONAL") later.push(r);
     }
     owe = Math.round(owe * 100) / 100;
 
     let label = "Still to pay", amount, hint;
-    if (owe > 0) { amount = sgd(owe); hint = "Unpaid items, minus anything DX owes you."; }
+    if (owe > 0) { amount = sgd(owe); hint = "Unpaid items and shipping, minus anything DX owes you."; }
     else if (owe < 0) { label = "Credit"; amount = sgd(-owe); hint = "DX owes you this much."; }
-    else { amount = "S$0.00"; hint = toConfirm ? "Some amounts are still being confirmed by DX." : "All settled. Thank you!"; }
+    else { amount = "S$0.00"; hint = toConfirm ? "Some amounts are still being confirmed by DX."
+                                      : later.length ? "All paid so far. Thank you!" : "All settled. Thank you!"; }
     if (oweJpyOnly) hint += ` Plus ${jpy(oweJpyOnly)} still to convert.`;
 
     const onTheWay = mine.filter((r) => r.stage.trim() && r.stage.toUpperCase().trim() !== "DELIVERED");
@@ -624,14 +701,13 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
       <div class="label" style="margin-top:0">${label}</div>
       <div class="amount">${amount}</div>
       <div class="hint">${esc(hint)}</div>
+      ${later.length ? `<div class="s2-note">+ SG shipping for ${later.length} item${later.length === 1 ? "" : "s"} still to come</div>` : ""}
       <div class="counts">
         <div><b>${onTheWay.length}</b>on the way</div>
         <div><b>${delivered.length}</b>delivered</div>
         ${adjust.length ? `<div><b>${adjust.length}</b>adjustments</div>` : ""}
       </div>`;
 
-    // What makes up "Still to pay": unpaid items plus credits from DX.
-    const unpaid = mine.filter((r) => ["NOT PAID", "CREDIT"].includes(r.pay.toUpperCase().trim()));
 
     const filters = [["way", "On the way"], ["unpaid", "Unpaid"], ["done", "Delivered"]];
     if (adjust.length) filters.push(["adj", "Credits"]);
@@ -642,7 +718,7 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     html += section("way", "On the way", onTheWay, true, "Nothing on the way right now.");
     html += section("done", "Delivered", delivered, true, "Nothing delivered yet.");
     if (adjust.length) html += section("adj", "Credits & adjustments", adjust, false, "");
-    html += receipt(unpaid, owe, toConfirm);
+    html += receipt(entries, owe, toConfirm, later);
 
     result.innerHTML = html;
     const applyFilter = (f) => {

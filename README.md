@@ -98,6 +98,22 @@ Changes show up on the page after Google re-publishes, which usually takes **abo
    e.g. SGD `=ROUND('new drop'!I24,2)`, JPY `='new drop'!H24`, Rate `='new drop'!D4`.
 3. If you keep a Summary block for that friend, add a line with status `=IF(Orders!G66="","",Orders!G66)`; their total updates by itself.
 
+### 2nd payment (SG shipping after consolidation)
+
+Two columns at the end of **Orders**: **SG shipping (SGD)** and **SG shipping status** (dropdown: PENDING, NOT PAID, PAID, N/A, DEDUCTED, PERSONAL).
+
+| Situation | Fill in | Friends see |
+|---|---|---|
+| Ordered, not at the warehouse yet | nothing | "Worked out once it reaches the warehouse" |
+| At the warehouse | Stage `AT WAREHOUSE` (+ Batch) | "Waiting to ship with Batch 4, amount coming soon" |
+| Shipped, amount not worked out yet | Stage `SHIPPING TO SG` | "Amount coming soon" |
+| Amount ready | amount + `NOT PAID` | S$3.20 · Not paid. Added to Still to pay, the Unpaid receipt and PAY |
+| Paid | `PAID` | S$3.20 · Paid |
+| No SG shipping for this item | `N/A` | nothing |
+
+A blank status means PENDING. Delivered items with blank shipping show nothing (older batches were settled separately).
+Split a batch by quantity, e.g. `=ROUND(<person's batch share> * C12 / <their items in the batch>, 2)`.
+
 ## Privacy, in plain words
 
 - The page only ever shows the rows for the exact name or handle typed. It never lists, suggests or autocompletes other people.
