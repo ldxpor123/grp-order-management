@@ -380,9 +380,9 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
   function esc(s) {
     return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
-  // Exact, case-insensitive match key. "@Sam", "sam", "ｓａｍ" all become "sam".
+  // Exact match key, ignoring case, a leading @ and spaces: "@Sam", "sam", "ｓａｍ", "Sa m" all become "sam".
   function key(s) {
-    return String(s || "").normalize("NFKC").trim().replace(/^@+/, "").replace(/\s+/g, " ").toLowerCase();
+    return String(s || "").normalize("NFKC").trim().replace(/^@+/, "").replace(/\s+/g, "").toLowerCase();
   }
   function num(s) {
     if (s == null) return null;
@@ -449,23 +449,28 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
       person: "person", item: "item", qty: "qty", sgd: "sgd", jpy: "jpy", rate: "rate",
       pay: "payment", stage: "stage", batch: "batch", ship: "expected", note: "note"
     }).filter((r) => r.person && r.item);
-    const handles = table(h, { person: "person", handles: "telegram" }).filter((r) => r.person);
+    const handles = table(h, { person: "person", handles: "telegram", nicks: "nick" }).filter((r) => r.person);
     return { orders, handles };
   }
 
   /* ---------- lookup ---------- */
+  // Returns the person's name, null if nobody matches, or AMBIGUOUS if a nickname belongs to more than one person.
+  const AMBIGUOUS = {};
   function findPerson(query) {
     const k = key(query);
     if (!k) return null;
-    const names = new Map();                          // key -> display name
-    for (const r of data.orders) names.set(key(r.person), r.person);
-    for (const r of data.handles) if (!names.has(key(r.person))) names.set(key(r.person), r.person);
-    if (names.has(k)) return names.get(k);
+    // 1. Their name exactly as written in the Person column always wins.
+    for (const r of data.orders) if (key(r.person) === k) return r.person;
+    for (const r of data.handles) if (key(r.person) === k) return r.person;
+    // 2. Telegram handles (column B) and nicknames (column C, comma-separated, spaces allowed).
+    const found = new Map();                          // person key -> display name
     for (const r of data.handles) {
-      const hs = r.handles.split(/[\s,;\/|]+/).map(key).filter(Boolean);
-      if (hs.includes(k)) return r.person;
+      const hs = r.handles.split(/[\s,;\/|、，]+/).map(key).filter(Boolean);
+      const ns = (r.nicks || "").split(/[,;\/|、，]+/).map(key).filter(Boolean);
+      if (hs.includes(k) || ns.includes(k)) found.set(key(r.person), r.person);
     }
-    return null;
+    if (found.size === 1) return [...found.values()][0];
+    return found.size > 1 ? AMBIGUOUS : null;
   }
 
   /* ---------- rendering ---------- */
@@ -596,6 +601,10 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     if (loadError) return showLoadError();
     if (!data) return;
     const person = findPerson(q);
+    if (person === AMBIGUOUS) {
+      showHome(`More than one person goes by <strong>${esc(q.trim())}</strong>. Try your Telegram @ or full name instead.`);
+      return false;
+    }
     if (!person) {
       showHome(`Hmm, I couldn't find <strong>${esc(q.trim())}</strong>. Check the spelling or try your Telegram @. Still stuck? Message DX.`);
       return false;
