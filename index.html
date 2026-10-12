@@ -633,8 +633,7 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     // What makes up "Still to pay": unpaid items plus credits from DX.
     const unpaid = mine.filter((r) => ["NOT PAID", "CREDIT"].includes(r.pay.toUpperCase().trim()));
 
-    const filters = [["way", "On the way"], ["done", "Delivered"]];
-    filters.push(["unpaid", "Unpaid"]);
+    const filters = [["way", "On the way"], ["unpaid", "Unpaid"], ["done", "Delivered"]];
     if (adjust.length) filters.push(["adj", "Credits"]);
     filters.push(["all", "All"]);
     let html = `<div class="chips-row" role="group" aria-label="Filter">` +
