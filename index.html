@@ -192,6 +192,25 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     padding-bottom: 12px; border-bottom: 1px solid var(--ink); }
   .sec-head h2 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
   .sec-head .n { font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .rc-group { padding: 6px 0 4px; }
+  .rc-head { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 0 6px;
+    font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .rc-group.owe .rc-head { color: var(--np-ink); }
+  .rc-group.credit .rc-head { color: var(--cr-ink); }
+  .rc-hint { font-size: 12px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--ink-soft); }
+  .rc-line { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 9px 0;
+    border-bottom: 1px dashed var(--line); }
+  .rc-name { font-size: 14.5px; }
+  .rc-meta { font-size: 12.5px; color: var(--ink-soft); margin-top: 1px; }
+  .rc-amt { flex: none; font-size: 14.5px; font-weight: 500; font-variant-numeric: tabular-nums; text-align: right; }
+  .rc-amt small { display: block; font-size: 11px; font-weight: 400; color: var(--ink-soft); }
+  .rc-group.credit .rc-amt { color: var(--cr-ink); }
+  .rc-sub { display: flex; justify-content: space-between; padding: 10px 0 2px; font-size: 13px; color: var(--ink-soft); }
+  .rc-sub b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .rc-calc { margin: 14px 0 0; padding: 10px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line);
+    font-size: 14px; font-variant-numeric: tabular-nums; text-align: right; }
+  .rc-calc span { color: var(--ink-soft); margin: 0 4px; }
+  .receipt .sec-total { margin-top: 14px; }
   .sec-total { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 0 4px;
     border-top: 1px solid var(--ink); margin-top: -1px; font-size: 14px; color: var(--ink-soft); }
   .sec-total b { color: var(--ink); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -523,6 +542,43 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
       </article>`;
   }
 
+  // Unpaid view: a receipt showing how "Still to pay" is worked out.
+  const STAGE_SHORT = { "ORDERED": "Ordered", "AT WAREHOUSE": "At warehouse", "SHIPPING TO SG": "Shipping",
+                        "SHIPPING": "Shipping", "DELIVERED": "Delivered", "NO UPDATE": "No update yet" };
+  function receipt(rows, total) {
+    const toPay = rows.filter((r) => r.pay.toUpperCase().trim() === "NOT PAID");
+    const credits = rows.filter((r) => r.pay.toUpperCase().trim() === "CREDIT");
+    const sum = (list) => Math.round(list.reduce((a, r) => a + (num(r.sgd) || 0), 0) * 100) / 100;
+    const line = (r) => {
+      const s = num(r.sgd), j = num(r.jpy), q = num(r.qty);
+      const bits = [];
+      if (q != null) bits.push("×" + q);
+      if (s != null && j != null) bits.push(jpy(j));
+      const st = r.stage.toUpperCase().trim();
+      if (st) bits.push(STAGE_SHORT[st] || r.stage);
+      const amt = s != null ? sgd(s) : (j != null ? `${jpy(j)}<small>not in total</small>` : "–");
+      return `<div class="rc-line">
+          <div class="rc-name">${esc(r.item)}${bits.length ? `<div class="rc-meta">${esc(bits.join(" · "))}</div>` : ""}</div>
+          <div class="rc-amt">${amt}</div>
+        </div>`;
+    };
+    const group = (title, hint, list, cls) => !list.length ? "" : `
+      <div class="rc-group ${cls}">
+        <div class="rc-head"><span>${title}</span><span class="rc-hint">${hint}</span></div>
+        ${list.map(line).join("")}
+        <div class="rc-sub"><span>Subtotal</span><b>${sgd(sum(list))}</b></div>
+      </div>`;
+    let html = `<section data-sec="unpaid" data-only="1" class="receipt">
+      <div class="sec-head"><h2>Unpaid</h2><span class="n">${rows.length}</span></div>`;
+    html += group("You owe DX", `${toPay.length} item${toPay.length === 1 ? "" : "s"}`, toPay, "owe");
+    html += group("DX owes you", "taken off your total", credits, "credit");
+    if (credits.length && toPay.length) {
+      html += `<div class="rc-calc">${sgd(sum(toPay))} <span>−</span> ${sgd(Math.abs(sum(credits)))} <span>=</span> ${sgd(total)}</div>`;
+    }
+    html += `<div class="sec-total"><span>Still to pay</span><b>${sgd(total)}</b></div></section>`;
+    return html;
+  }
+
   function section(id, title, rows, withTracker, emptyText) {
     let html = `<section data-sec="${id}"><div class="sec-head"><h2>${esc(title)}</h2><span class="n">${rows.length}</span></div>`;
     html += rows.length ? rows.map((r) => itemRow(r, withTracker)).join("") : `<p class="empty">${esc(emptyText)}</p>`;
@@ -579,11 +635,7 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     html += section("way", "On the way", onTheWay, true, "Nothing on the way right now.");
     html += section("done", "Delivered", delivered, true, "Nothing delivered yet.");
     if (adjust.length) html += section("adj", "Credits & adjustments", adjust, false, "");
-    if (unpaid.length) {
-      html += `<section data-sec="unpaid" data-only="1"><div class="sec-head"><h2>Unpaid</h2><span class="n">${unpaid.length}</span></div>` +
-        unpaid.map((r) => itemRow(r, !!r.stage.trim())).join("") +
-        `<div class="sec-total"><span>Adds up to</span><b>${sgd(owe)}</b></div></section>`;
-    }
+    if (unpaid.length) html += receipt(unpaid, owe);
 
     result.innerHTML = html;
     const applyFilter = (f) => {
