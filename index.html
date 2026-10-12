@@ -545,7 +545,13 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
   // Unpaid view: a receipt showing how "Still to pay" is worked out.
   const STAGE_SHORT = { "ORDERED": "Ordered", "AT WAREHOUSE": "At warehouse", "SHIPPING TO SG": "Shipping",
                         "SHIPPING": "Shipping", "DELIVERED": "Delivered", "NO UPDATE": "No update yet" };
-  function receipt(rows, total) {
+  function receipt(rows, total, toConfirm) {
+    if (!rows.length) {
+      return `<section data-sec="unpaid" data-only="1" class="receipt">
+        <div class="sec-head"><h2>Unpaid</h2><span class="n">0</span></div>
+        <p class="empty">${toConfirm ? "Nothing marked as unpaid yet. Some amounts are still being confirmed by DX."
+                                     : "Nothing unpaid. You're all settled, thank you!"}</p></section>`;
+    }
     const toPay = rows.filter((r) => r.pay.toUpperCase().trim() === "NOT PAID");
     const credits = rows.filter((r) => r.pay.toUpperCase().trim() === "CREDIT");
     const sum = (list) => Math.round(list.reduce((a, r) => a + (num(r.sgd) || 0), 0) * 100) / 100;
@@ -589,6 +595,8 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     const pk = key(person);
     const mine = data.orders.filter((r) => key(r.person) === pk);   // ONLY this person's rows
 
+    // Rows whose payment status is blank or unknown: not settled, just not confirmed yet.
+    const toConfirm = mine.some((r) => !["PAID", "NOT PAID", "DEDUCTED", "CREDIT", "PERSONAL"].includes(r.pay.toUpperCase().trim()));
     let owe = 0, oweJpyOnly = 0;
     for (const r of mine) {
       const p = r.pay.toUpperCase().trim();
@@ -601,7 +609,7 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     let label = "Still to pay", amount, hint;
     if (owe > 0) { amount = sgd(owe); hint = "Unpaid items, minus anything DX owes you."; }
     else if (owe < 0) { label = "Credit"; amount = sgd(-owe); hint = "DX owes you this much."; }
-    else { amount = "S$0.00"; hint = "All settled. Thank you!"; }
+    else { amount = "S$0.00"; hint = toConfirm ? "Some amounts are still being confirmed by DX." : "All settled. Thank you!"; }
     if (oweJpyOnly) hint += ` Plus ${jpy(oweJpyOnly)} still to convert.`;
 
     const onTheWay = mine.filter((r) => r.stage.trim() && r.stage.toUpperCase().trim() !== "DELIVERED");
@@ -626,7 +634,7 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     const unpaid = mine.filter((r) => ["NOT PAID", "CREDIT"].includes(r.pay.toUpperCase().trim()));
 
     const filters = [["way", "On the way"], ["done", "Delivered"]];
-    if (unpaid.length) filters.push(["unpaid", "Unpaid"]);
+    filters.push(["unpaid", "Unpaid"]);
     if (adjust.length) filters.push(["adj", "Credits"]);
     filters.push(["all", "All"]);
     let html = `<div class="chips-row" role="group" aria-label="Filter">` +
@@ -635,7 +643,7 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     html += section("way", "On the way", onTheWay, true, "Nothing on the way right now.");
     html += section("done", "Delivered", delivered, true, "Nothing delivered yet.");
     if (adjust.length) html += section("adj", "Credits & adjustments", adjust, false, "");
-    if (unpaid.length) html += receipt(unpaid, owe);
+    html += receipt(unpaid, owe, toConfirm);
 
     result.innerHTML = html;
     const applyFilter = (f) => {
