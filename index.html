@@ -753,7 +753,8 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
         s.classList.toggle("hidden", f === "all" ? !!s.dataset.only : s.dataset.sec !== f));
     };
     result.querySelectorAll(".fchip").forEach((b) => b.addEventListener("click", () => applyFilter(b.dataset.f)));
-    applyFilter(onTheWay.length ? "way" : "all");   // start on "On the way"; show everything if nothing is on the way
+    // Start on "On the way"; if nothing is on the way, "Unpaid"; if nothing is owed either, "All".
+    applyFilter(onTheWay.length ? "way" : entries.length ? "unpaid" : "all");
 
     homeEl.classList.add("hidden");
     viewResult.classList.remove("hidden");
