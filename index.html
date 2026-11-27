@@ -192,18 +192,23 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     padding-bottom: 12px; border-bottom: 1px solid var(--ink); }
   .sec-head h2 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
   .sec-head .n { font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
-  .ship2 { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 9px; margin-top: 10px; padding: 9px 12px;
-    border-radius: 14px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; }
-  .ship2 svg { width: 16px; height: 16px; flex: none; color: var(--ink-soft); }
-  .ship2 .lbl { color: var(--ink-soft); }
-  .ship2 .s2-amt { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .ship2 .s2-wait { margin-left: auto; font-weight: 500; }
+  .pays { margin-top: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); overflow: hidden; }
+  .pay-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 9px; padding: 9px 12px; font-size: 13px; }
+  .pay-line + .pay-line { border-top: 1px dashed var(--line); }
+  .pay-line svg { width: 16px; height: 16px; flex: none; color: var(--ink-soft); }
+  .pay-line .lbl { color: var(--ink-soft); }
+  .pay-line .pay-amt { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .pay-line .s2-wait { margin-left: auto; font-weight: 500; }
   .s2-later .s2-wait { color: var(--ink-soft); }
-  .s2-waiting { border-style: dashed; } .s2-waiting .s2-wait, .s2-waiting svg { color: var(--s-warehouse); }
-  .s2-soon { border-style: dashed; } .s2-soon .s2-wait, .s2-soon svg { color: var(--s-shipping); }
+  .s2-waiting .s2-wait, .s2-waiting svg { color: var(--s-warehouse); }
+  .s2-soon .s2-wait, .s2-soon svg { color: var(--s-shipping); }
+  .s2-ready svg { color: var(--s-shipping); }
   .s2-note { margin-top: 8px; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px dashed var(--line);
     border-radius: 12px; padding: 7px 12px; display: inline-block; }
-  .rc-ship .rc-meta { color: var(--s-shipping); }
+  .rc-parts { margin-top: 6px; padding-left: 10px; border-left: 2px solid var(--line); max-width: 300px; }
+  .rc-part { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--ink); padding: 1px 0;
+    font-variant-numeric: tabular-nums; }
+  .rc-part.done { color: var(--ink-faint); }
   .rc-later { margin-top: 14px; padding: 12px 14px; border-radius: 14px; border: 1px dashed var(--ink-faint);
     font-size: 13.5px; color: var(--ink-soft); }
   .rc-later b { display: block; color: var(--ink); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 2px; }
@@ -215,7 +220,7 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
   .rc-hint { font-size: 12px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--ink-soft); }
   .rc-line { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 9px 0;
     border-bottom: 1px dashed var(--line); }
-  .rc-name { font-size: 14.5px; }
+  .rc-name { font-size: 14.5px; flex: 1; min-width: 0; }
   .rc-meta { font-size: 12.5px; color: var(--ink-soft); margin-top: 1px; }
   .rc-amt { flex: none; font-size: 14.5px; font-weight: 500; font-variant-numeric: tabular-nums; text-align: right; }
   .rc-amt small { display: block; font-size: 11px; font-weight: 400; color: var(--ink-soft); }
@@ -534,25 +539,33 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     return `<ol class="tracker" aria-label="Progress">${lis}</ol>`;
   }
 
-  function s2Line(r) {
-    const sp = shipPay(r);
-    if (!sp) return "";
-    const value = sp.state === "ready"
-      ? `<span class="s2-amt">${sgd(sp.amt)}</span>${payPill(sp.status)}`
-      : `<span class="s2-wait">${esc(S2_TEXT[sp.state](r))}</span>`;
-    return `<div class="ship2 s2-${sp.state}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17" cy="17.5" r="1.6"/></svg>
-        <span class="lbl">2nd payment · SG shipping${sp.state === "ready" && r.batch ? " · " + esc(r.batch) : ""}</span>
-        ${value}
-      </div>`;
+  const TRUCK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17" cy="17.5" r="1.6"/></svg>`;
+  const BAG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>`;
+  // Both payments for an item, shown inside the item: 1st (the goods) and 2nd (SG shipping).
+  function paymentsBox(r, sp) {
+    const s = num(r.sgd);
+    const first = `<div class="pay-line">${BAG}<span class="lbl">1st payment · item</span>
+        <span class="pay-amt">${s != null ? sgd(s) : ""}</span>${payPill(r.pay)}</div>`;
+    const second = sp.state === "ready"
+      ? `<div class="pay-line s2-ready">${TRUCK}<span class="lbl">2nd payment · SG shipping</span>
+          <span class="pay-amt">${sgd(sp.amt)}</span>${payPill(sp.status)}</div>`
+      : `<div class="pay-line s2-${sp.state}">${TRUCK}<span class="lbl">2nd payment · SG shipping</span>
+          <span class="s2-wait">${esc(S2_TEXT[sp.state](r))}</span></div>`;
+    return `<div class="pays">${first}${second}</div>`;
+  }
+  // The pill at the top of an item: "Not paid" while either payment is still owed.
+  function overallPay(r, sp) {
+    if (sp && sp.state === "ready" && sp.status === "NOT PAID") return "NOT PAID";
+    return r.pay;
   }
 
   function itemRow(r, withTracker) {
     const qty = num(r.qty), s = num(r.sgd), j = num(r.jpy), rate = num(r.rate);
+    const sp = withTracker ? shipPay(r) : null;     // 2nd payment, if this item has one
     const meta = [];
     if (qty != null) meta.push(`<span>×${esc(qty)}</span>`);
     else if (r.qty) meta.push(`<span>${esc(r.qty)}</span>`);
-    if (s != null) meta.push(`<span class="money">${sgd(s)}</span>`);
+    if (s != null && !sp) meta.push(`<span class="money">${sgd(s)}</span>`);
     if (j != null) meta.push(`<span class="money">${jpy(j)}</span>`);
     if (rate != null) meta.push(`<span>${esc(rate.toFixed(6))} S$/¥</span>`);
     if (r.batch) meta.push(`<span>${esc(r.batch)}</span>`);
@@ -568,13 +581,13 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
       <article class="row"${withTracker ? ` data-stage="${stageKey}"` : ""}>
         <div class="row-head">
           <div class="row-title">${esc(r.item)}</div>
-          ${payPill(r.pay)}
+          ${payPill(overallPay(r, sp))}
         </div>
         ${r.note ? `<div class="note">${esc(r.note)}</div>` : ""}
         ${meta.length ? `<div class="meta">${meta.join("")}</div>` : ""}
         ${withTracker ? tracker(r.stage) + `<div class="stage">${esc(stageText)}</div>` : ""}
         ${ship}
-        ${s2Line(r)}
+        ${sp ? paymentsBox(r, sp) : ""}
       </article>`;
   }
 
@@ -614,25 +627,37 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
                          : later.length ? "Nothing to pay right now." : "Nothing unpaid. You're all settled, thank you!"}</p>
         ${laterHtml}</section>`;
     }
-    const toPay = entries.filter((e) => e.status === "NOT PAID");
-    const credits = entries.filter((e) => e.status === "CREDIT");
-    const sum = (list) => Math.round(list.reduce((a, e) => a + (e.amt || 0), 0) * 100) / 100;
-    const line = ({ r, kind, amt }) => {
+    // One line per item: its 1st and 2nd payment are listed together under it.
+    const byItem = (list) => {
+      const m = new Map();
+      for (const e of list) { if (!m.has(e.r)) m.set(e.r, { r: e.r, parts: [] }); m.get(e.r).parts.push(e); }
+      return [...m.values()];
+    };
+    const toPay = byItem(entries.filter((e) => e.status === "NOT PAID"));
+    const credits = byItem(entries.filter((e) => e.status === "CREDIT"));
+    const lineAmt = (l) => l.parts.reduce((a, e) => a + (e.amt || 0), 0);
+    const sum = (list) => Math.round(list.reduce((a, l) => a + lineAmt(l), 0) * 100) / 100;
+    const line = ({ r, parts }) => {
       const bits = [];
-      if (kind === "ship") {
-        bits.push("SG shipping (2nd payment)");
-        if (r.batch) bits.push(r.batch);
-      } else {
-        const j = num(r.jpy), q = num(r.qty);
-        if (q != null) bits.push("×" + q);
-        if (amt != null && j != null) bits.push(jpy(j));
-        const st = r.stage.toUpperCase().trim();
-        if (st) bits.push(STAGE_SHORT[st] || r.stage);
-      }
-      const j = num(r.jpy);
-      const shown = amt != null ? sgd(amt) : (kind === "item" && j != null ? `${jpy(j)}<small>not in total</small>` : "–");
-      return `<div class="rc-line${kind === "ship" ? " rc-ship" : ""}">
-          <div class="rc-name">${esc(r.item)}${bits.length ? `<div class="rc-meta">${esc(bits.join(" · "))}</div>` : ""}</div>
+      const j = num(r.jpy), q = num(r.qty);
+      if (q != null) bits.push("×" + q);
+      const st = r.stage.toUpperCase().trim();
+      if (st) bits.push(STAGE_SHORT[st] || r.stage);
+      const sp = shipPay(r);
+      let sub = "";
+      if (sp && sp.state === "ready") {                // show both payments for this item
+        const item = parts.find((e) => e.kind === "item"), ship = parts.find((e) => e.kind === "ship");
+        const s = num(r.sgd);
+        const row = (label, owed, amt, status) => `<div class="rc-part${owed ? "" : " done"}"><span>${label}</span>
+          <span>${owed ? sgd(amt) : (s != null || amt != null ? esc((PAY_LABEL[status] || status || "—").toLowerCase()) : "")}</span></div>`;
+        sub = `<div class="rc-parts">
+          ${row("1st payment · item", !!item, item ? item.amt : s, r.pay.toUpperCase().trim())}
+          ${row("2nd payment · SG shipping", !!ship, sp.amt, sp.status)}</div>`;
+      } else if (!parts.some((e) => e.kind === "ship") && j != null && parts[0].amt != null) bits.splice(1, 0, jpy(j));
+      const onlyYen = parts.length === 1 && parts[0].amt == null;
+      const shown = onlyYen ? (j != null ? `${jpy(j)}<small>not in total</small>` : "–") : sgd(lineAmt({ parts }));
+      return `<div class="rc-line">
+          <div class="rc-name">${esc(r.item)}${bits.length ? `<div class="rc-meta">${esc(bits.join(" · "))}</div>` : ""}${sub}</div>
           <div class="rc-amt">${shown}</div>
         </div>`;
     };
@@ -643,8 +668,8 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
         <div class="rc-sub"><span>Subtotal</span><b>${sgd(sum(list))}</b></div>
       </div>`;
     let html = `<section data-sec="unpaid" data-only="1" class="receipt">
-      <div class="sec-head"><h2>Unpaid</h2><span class="n">${entries.length}</span></div>`;
-    html += group("You owe DX", `${toPay.length} line${toPay.length === 1 ? "" : "s"}`, toPay, "owe");
+      <div class="sec-head"><h2>Unpaid</h2><span class="n">${toPay.length + credits.length}</span></div>`;
+    html += group("You owe DX", `${toPay.length} item${toPay.length === 1 ? "" : "s"}`, toPay, "owe");
     html += group("DX owes you", "taken off your total", credits, "credit");
     if (credits.length && toPay.length) {
       html += `<div class="rc-calc">${sgd(sum(toPay))} <span>−</span> ${sgd(Math.abs(sum(credits)))} <span>=</span> ${sgd(total)}</div>`;
