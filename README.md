@@ -68,7 +68,7 @@ You only edit the **Orders** tab, and mostly just two columns (both have dropdow
 | | `DEDUCTED` | Settled by netting off, ignored in the total |
 | | `CREDIT` | You owe them. Use a **negative** SGD, which reduces their total |
 | | *(blank)* | Not confirmed yet. Shows "TO CONFIRM", ignored in the total |
-| **Stage** | `ORDERED` → `AT WAREHOUSE` → `SHIPPING TO SG` → `DELIVERED` | Moves the 4-step tracker |
+| **Stage** | `ORDERED` → `AT WAREHOUSE` → `SHIPPING TO SG` → `ARRANGE FOR COLLECTION` → `DELIVERED` | Moves the 5-step tracker |
 | | `NO UPDATE` | Tracker stays grey ("No update yet") |
 | | *(blank)* | Money-only line. Shown under "Credits & adjustments" with no tracker |
 

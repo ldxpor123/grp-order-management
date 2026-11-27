@@ -46,6 +46,7 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     --s-warehouse: #3e78b2; --s-warehouse-bg: #dde8f4;
     --s-shipping: #7a55b8;  --s-shipping-bg: #e9e0f5;
     --s-delivered: #2f855a; --s-delivered-bg: #d9eee1;
+    --s-collect: #1c7c80;   --s-collect-bg: #d5eeee;
     --s-none: #9a8f8a;      --s-none-bg: #eeebe8;
   }
   @media (prefers-color-scheme: dark) {
@@ -58,6 +59,7 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
       --pe-bg: #2c221f; --pe-ink: #bfb2a8;
       --s-ordered: #e0a94e; --s-ordered-bg: #3a2d17; --s-warehouse: #7db0e6; --s-warehouse-bg: #1c2e42;
       --s-shipping: #b497ea; --s-shipping-bg: #2e2442; --s-delivered: #73c495; --s-delivered-bg: #1c3527;
+      --s-collect: #6ccfcf; --s-collect-bg: #163536;
       --s-none: #8a7f79; --s-none-bg: #2c2522;
     }
   }
@@ -70,6 +72,7 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     --pe-bg: #2c221f; --pe-ink: #bfb2a8;
     --s-ordered: #e0a94e; --s-ordered-bg: #3a2d17; --s-warehouse: #7db0e6; --s-warehouse-bg: #1c2e42;
     --s-shipping: #b497ea; --s-shipping-bg: #2e2442; --s-delivered: #73c495; --s-delivered-bg: #1c3527;
+      --s-collect: #6ccfcf; --s-collect-bg: #163536;
     --s-none: #8a7f79; --s-none-bg: #2c2522;
   }
 
@@ -197,6 +200,9 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
   .pay-line + .pay-line { border-top: 1px dashed var(--line); }
   .pay-line svg { width: 16px; height: 16px; flex: none; color: var(--ink-soft); }
   .pay-line .lbl { color: var(--ink-soft); }
+  .pay-line.has-amt { flex-wrap: nowrap; }
+  .pay-line.has-amt .lbl { flex: 1; min-width: 0; }
+  .pay-line .pill { flex: none; }
   .pay-line .pay-amt { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
   .pay-line .s2-wait { margin-left: auto; font-weight: 500; }
   .s2-later .s2-wait { color: var(--ink-soft); }
@@ -259,10 +265,11 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
   .row[data-stage="ordered"] { --st: var(--s-ordered); --st-bg: var(--s-ordered-bg); }
   .row[data-stage="warehouse"] { --st: var(--s-warehouse); --st-bg: var(--s-warehouse-bg); }
   .row[data-stage="shipping"] { --st: var(--s-shipping); --st-bg: var(--s-shipping-bg); }
+  .row[data-stage="collect"] { --st: var(--s-collect); --st-bg: var(--s-collect-bg); }
   .row[data-stage="delivered"] { --st: var(--s-delivered); --st-bg: var(--s-delivered-bg); }
 
   /* 4-step tracker */
-  .tracker { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); margin: 16px 0 0; padding: 0; }
+  .tracker { list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); margin: 16px 0 0; padding: 0; }
   .tracker li { position: relative; padding-top: 16px; font-size: 11.5px; color: var(--ink-faint); }
   .tracker li::before { content: ""; position: absolute; top: 3px; left: 0; right: 0; height: 2px; background: var(--line); border-radius: 2px; }
   .tracker li::after { content: ""; position: absolute; top: 0; left: 0; width: 8px; height: 8px; border-radius: 50%;
@@ -387,13 +394,15 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
 (function () {
   "use strict";
 
-  const STEPS = ["Ordered", "At warehouse", "Shipping", "Delivered"];
-  const STAGE_INDEX = { "ORDERED": 0, "AT WAREHOUSE": 1, "SHIPPING TO SG": 2, "SHIPPING": 2, "DELIVERED": 3 };
+  const STEPS = ["Ordered", "At warehouse", "Shipping", "Collection", "Delivered"];
+  const STAGE_INDEX = { "ORDERED": 0, "AT WAREHOUSE": 1, "SHIPPING TO SG": 2, "SHIPPING": 2,
+                        "ARRANGE FOR COLLECTION": 3, "DELIVERED": 4 };
   const STAGE_LABEL = {
     "ORDERED": "Ordered, waiting for the Japan release",
     "AT WAREHOUSE": "Arrived at the Buy&Ship warehouse",
     "SHIPPING TO SG": "On the way to Singapore",
     "SHIPPING": "On the way to Singapore",
+    "ARRANGE FOR COLLECTION": "In Singapore, arranging collection",
     "DELIVERED": "Delivered",
     "NO UPDATE": "No update yet"
   };
@@ -495,6 +504,8 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
       s2: (h) => /^(sg shipping|2nd payment)/.test(h) && !h.includes("status"),
       s2status: (h) => /^(sg shipping|2nd payment)/.test(h) && h.includes("status")
     }).filter((r) => r.person && r.item);
+    // "Arrange for collection", "Ready for collection", "Collection"... all mean the same stage.
+    for (const r of orders) if (/collect/i.test(r.stage)) r.stage = "ARRANGE FOR COLLECTION";
     const handles = table(h, { person: "person", handles: "telegram", nicks: "nick" }).filter((r) => r.person);
     // Only show 2nd payments once the sheet has the SG shipping columns.
     const header = parseCSV(o.slice(0, 2000))[0] || [];
@@ -544,10 +555,10 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
   // Both payments for an item, shown inside the item: 1st (the goods) and 2nd (SG shipping).
   function paymentsBox(r, sp) {
     const s = num(r.sgd);
-    const first = `<div class="pay-line">${BAG}<span class="lbl">1st payment · item</span>
+    const first = `<div class="pay-line has-amt">${BAG}<span class="lbl">1st payment · item</span>
         <span class="pay-amt">${s != null ? sgd(s) : ""}</span>${payPill(r.pay)}</div>`;
     const second = sp.state === "ready"
-      ? `<div class="pay-line s2-ready">${TRUCK}<span class="lbl">2nd payment · SG shipping</span>
+      ? `<div class="pay-line has-amt s2-ready">${TRUCK}<span class="lbl">2nd payment · SG shipping</span>
           <span class="pay-amt">${sgd(sp.amt)}</span>${payPill(sp.status)}</div>`
       : `<div class="pay-line s2-${sp.state}">${TRUCK}<span class="lbl">2nd payment · SG shipping</span>
           <span class="s2-wait">${esc(S2_TEXT[sp.state](r))}</span></div>`;
@@ -573,7 +584,7 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     const st = r.stage.toUpperCase().trim();
     const stageText = STAGE_LABEL[st] || r.stage;
     const stageKey = { "ORDERED": "ordered", "AT WAREHOUSE": "warehouse", "SHIPPING TO SG": "shipping",
-                       "SHIPPING": "shipping", "DELIVERED": "delivered" }[st] || "none";
+                       "SHIPPING": "shipping", "ARRANGE FOR COLLECTION": "collect", "DELIVERED": "delivered" }[st] || "none";
     const ship = r.ship ? `<div class="ship">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
           <span class="lbl">Ships from Japan</span> <span>${esc(r.ship)}</span></div>` : "";
@@ -606,7 +617,7 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     if (!stage) return null;                                       // money-only rows
     if (stage === "DELIVERED") return st === "PENDING" ? { state: "soon" } : null;   // older batches were settled separately
     if (stage === "AT WAREHOUSE") return { state: "waiting" };
-    if (stage === "SHIPPING TO SG" || stage === "SHIPPING") return { state: "soon" };
+    if (stage === "SHIPPING TO SG" || stage === "SHIPPING" || stage === "ARRANGE FOR COLLECTION") return { state: "soon" };
     return { state: "later" };
   }
   const S2_TEXT = { later: () => "Worked out once it reaches the warehouse",
@@ -615,7 +626,8 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
 
   // Unpaid view: a receipt showing how "Still to pay" is worked out.
   const STAGE_SHORT = { "ORDERED": "Ordered", "AT WAREHOUSE": "At warehouse", "SHIPPING TO SG": "Shipping",
-                        "SHIPPING": "Shipping", "DELIVERED": "Delivered", "NO UPDATE": "No update yet" };
+                        "SHIPPING": "Shipping", "ARRANGE FOR COLLECTION": "Arranging collection",
+                        "DELIVERED": "Delivered", "NO UPDATE": "No update yet" };
   // entries: [{ r, kind: "item" | "ship", amt, status }]; later: rows whose SG shipping is still to come.
   function receipt(entries, total, toConfirm, later) {
     const laterHtml = !later.length ? "" : `<div class="rc-later"><b>Coming later</b>
