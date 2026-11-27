@@ -47,6 +47,7 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     --s-shipping: #7a55b8;  --s-shipping-bg: #e9e0f5;
     --s-delivered: #2f855a; --s-delivered-bg: #d9eee1;
     --s-collect: #1c7c80;   --s-collect-bg: #d5eeee;
+    --s-ready: #b8457a;     --s-ready-bg: #f6dbe7;
     --s-none: #9a8f8a;      --s-none-bg: #eeebe8;
   }
   @media (prefers-color-scheme: dark) {
@@ -59,7 +60,7 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
       --pe-bg: #2c221f; --pe-ink: #bfb2a8;
       --s-ordered: #e0a94e; --s-ordered-bg: #3a2d17; --s-warehouse: #7db0e6; --s-warehouse-bg: #1c2e42;
       --s-shipping: #b497ea; --s-shipping-bg: #2e2442; --s-delivered: #73c495; --s-delivered-bg: #1c3527;
-      --s-collect: #6ccfcf; --s-collect-bg: #163536;
+      --s-collect: #6ccfcf; --s-collect-bg: #163536; --s-ready: #f08cbc; --s-ready-bg: #3d1f2d;
       --s-none: #8a7f79; --s-none-bg: #2c2522;
     }
   }
@@ -72,7 +73,7 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     --pe-bg: #2c221f; --pe-ink: #bfb2a8;
     --s-ordered: #e0a94e; --s-ordered-bg: #3a2d17; --s-warehouse: #7db0e6; --s-warehouse-bg: #1c2e42;
     --s-shipping: #b497ea; --s-shipping-bg: #2e2442; --s-delivered: #73c495; --s-delivered-bg: #1c3527;
-      --s-collect: #6ccfcf; --s-collect-bg: #163536;
+      --s-collect: #6ccfcf; --s-collect-bg: #163536; --s-ready: #f08cbc; --s-ready-bg: #3d1f2d;
     --s-none: #8a7f79; --s-none-bg: #2c2522;
   }
 
@@ -265,12 +266,15 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
   .row[data-stage="ordered"] { --st: var(--s-ordered); --st-bg: var(--s-ordered-bg); }
   .row[data-stage="warehouse"] { --st: var(--s-warehouse); --st-bg: var(--s-warehouse-bg); }
   .row[data-stage="shipping"] { --st: var(--s-shipping); --st-bg: var(--s-shipping-bg); }
-  .row[data-stage="collect"] { --st: var(--s-collect); --st-bg: var(--s-collect-bg); }
-  .row[data-stage="delivered"] { --st: var(--s-delivered); --st-bg: var(--s-delivered-bg); }
+  .row[data-stage="home"] { --st: var(--s-collect); --st-bg: var(--s-collect-bg); }
+  .row[data-stage="ready"] { --st: var(--s-ready); --st-bg: var(--s-ready-bg); }
+  .row[data-stage="done"] { --st: var(--s-delivered); --st-bg: var(--s-delivered-bg); }
 
   /* 4-step tracker */
-  .tracker { list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); margin: 16px 0 0; padding: 0; }
+  .tracker { list-style: none; display: grid; grid-template-columns: repeat(6, 1fr); margin: 16px 0 0; padding: 0; }
   .tracker li { position: relative; padding-top: 16px; font-size: 11.5px; color: var(--ink-faint); }
+  .tracker li { overflow-wrap: normal; word-break: keep-all; }
+  @media (max-width: 480px) { .tracker li { font-size: 9.5px; letter-spacing: -.02em; padding-right: 3px; } }
   .tracker li::before { content: ""; position: absolute; top: 3px; left: 0; right: 0; height: 2px; background: var(--line); border-radius: 2px; }
   .tracker li::after { content: ""; position: absolute; top: 0; left: 0; width: 8px; height: 8px; border-radius: 50%;
     background: var(--bg); border: 1.5px solid var(--ink-faint); box-sizing: border-box; }
@@ -394,16 +398,18 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
 (function () {
   "use strict";
 
-  const STEPS = ["Ordered", "At warehouse", "Shipping", "Collection", "Delivered"];
+  // DELIVERED = arrived at DX's place in Singapore; COLLECTED = handed over, done.
+  const STEPS = ["Ordered", "Warehouse", "Shipping", "Delivered", "Ready", "Collected"];
   const STAGE_INDEX = { "ORDERED": 0, "AT WAREHOUSE": 1, "SHIPPING TO SG": 2, "SHIPPING": 2,
-                        "ARRANGE FOR COLLECTION": 3, "DELIVERED": 4 };
+                        "DELIVERED": 3, "READY FOR COLLECTION": 4, "COLLECTED": 5 };
   const STAGE_LABEL = {
     "ORDERED": "Ordered, waiting for the Japan release",
     "AT WAREHOUSE": "Arrived at the Buy&Ship warehouse",
     "SHIPPING TO SG": "On the way to Singapore",
     "SHIPPING": "On the way to Singapore",
-    "ARRANGE FOR COLLECTION": "In Singapore, arranging collection",
-    "DELIVERED": "Delivered",
+    "DELIVERED": "Delivered to DX in Singapore",
+    "READY FOR COLLECTION": "Ready for collection, arrange a time with DX",
+    "COLLECTED": "Collected",
     "NO UPDATE": "No update yet"
   };
   const PAY_LABEL = { "PAID": "Paid", "NOT PAID": "Not paid", "DEDUCTED": "Deducted", "CREDIT": "Credit", "PERSONAL": "Personal" };
@@ -505,7 +511,11 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
       s2status: (h) => /^(sg shipping|2nd payment)/.test(h) && h.includes("status")
     }).filter((r) => r.person && r.item);
     // "Arrange for collection", "Ready for collection", "Collection"... all mean the same stage.
-    for (const r of orders) if (/collect/i.test(r.stage)) r.stage = "ARRANGE FOR COLLECTION";
+    for (const r of orders) {
+      const u = r.stage.toUpperCase().trim();
+      if (/^(COLLECTED|PICKED UP|HANDED OVER)$/.test(u)) r.stage = "COLLECTED";
+      else if (/COLLECT/.test(u)) r.stage = "READY FOR COLLECTION";   // "Ready for collection", "Arrange for collection"...
+    }
     const handles = table(h, { person: "person", handles: "telegram", nicks: "nick" }).filter((r) => r.person);
     // Only show 2nd payments once the sheet has the SG shipping columns.
     const header = parseCSV(o.slice(0, 2000))[0] || [];
@@ -584,7 +594,8 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     const st = r.stage.toUpperCase().trim();
     const stageText = STAGE_LABEL[st] || r.stage;
     const stageKey = { "ORDERED": "ordered", "AT WAREHOUSE": "warehouse", "SHIPPING TO SG": "shipping",
-                       "SHIPPING": "shipping", "ARRANGE FOR COLLECTION": "collect", "DELIVERED": "delivered" }[st] || "none";
+                       "SHIPPING": "shipping", "DELIVERED": "home", "READY FOR COLLECTION": "ready",
+                       "COLLECTED": "done" }[st] || "none";
     const ship = r.ship ? `<div class="ship">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
           <span class="lbl">Ships from Japan</span> <span>${esc(r.ship)}</span></div>` : "";
@@ -615,9 +626,9 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
     if (amt != null && st !== "PENDING") return { state: "ready", amt, status: SET_STATUSES.includes(st) ? st : "" };
     const stage = r.stage.toUpperCase().trim();
     if (!stage) return null;                                       // money-only rows
-    if (stage === "DELIVERED") return st === "PENDING" ? { state: "soon" } : null;   // older batches were settled separately
+    if (stage === "COLLECTED") return st === "PENDING" ? { state: "soon" } : null;   // older batches were settled separately
     if (stage === "AT WAREHOUSE") return { state: "waiting" };
-    if (stage === "SHIPPING TO SG" || stage === "SHIPPING" || stage === "ARRANGE FOR COLLECTION") return { state: "soon" };
+    if (["SHIPPING TO SG", "SHIPPING", "DELIVERED", "READY FOR COLLECTION"].includes(stage)) return { state: "soon" };
     return { state: "later" };
   }
   const S2_TEXT = { later: () => "Worked out once it reaches the warehouse",
@@ -626,8 +637,8 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
 
   // Unpaid view: a receipt showing how "Still to pay" is worked out.
   const STAGE_SHORT = { "ORDERED": "Ordered", "AT WAREHOUSE": "At warehouse", "SHIPPING TO SG": "Shipping",
-                        "SHIPPING": "Shipping", "ARRANGE FOR COLLECTION": "Arranging collection",
-                        "DELIVERED": "Delivered", "NO UPDATE": "No update yet" };
+                        "SHIPPING": "Shipping", "DELIVERED": "Delivered to DX", "READY FOR COLLECTION": "Ready for collection",
+                        "COLLECTED": "Collected", "NO UPDATE": "No update yet" };
   // entries: [{ r, kind: "item" | "ship", amt, status }]; later: rows whose SG shipping is still to come.
   function receipt(entries, total, toConfirm, later) {
     const laterHtml = !later.length ? "" : `<div class="rc-later"><b>Coming later</b>
@@ -726,8 +737,8 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
                                       : later.length ? "All paid so far. Thank you!" : "All settled. Thank you!"; }
     if (oweJpyOnly) hint += ` Plus ${jpy(oweJpyOnly)} still to convert.`;
 
-    const onTheWay = mine.filter((r) => r.stage.trim() && r.stage.toUpperCase().trim() !== "DELIVERED");
-    const delivered = mine.filter((r) => r.stage.toUpperCase().trim() === "DELIVERED");
+    const onTheWay = mine.filter((r) => r.stage.trim() && r.stage.toUpperCase().trim() !== "COLLECTED");
+    const delivered = mine.filter((r) => r.stage.toUpperCase().trim() === "COLLECTED");   // handed over
     const adjust = mine.filter((r) => !r.stage.trim());
 
     nameEl.textContent = person;
@@ -741,19 +752,19 @@ const PAYNOW_QR_URL  = "pn_qr.jpg";           // image file next to index.html
       ${later.length ? `<div class="s2-note">+ SG shipping for ${later.length} item${later.length === 1 ? "" : "s"} still to come</div>` : ""}
       <div class="counts">
         <div><b>${onTheWay.length}</b>on the way</div>
-        <div><b>${delivered.length}</b>delivered</div>
+        <div><b>${delivered.length}</b>collected</div>
         ${adjust.length ? `<div><b>${adjust.length}</b>adjustments</div>` : ""}
       </div>`;
 
 
-    const filters = [["way", "On the way"], ["unpaid", "Unpaid"], ["done", "Delivered"]];
+    const filters = [["way", "On the way"], ["unpaid", "Unpaid"], ["done", "Collected"]];
     if (adjust.length) filters.push(["adj", "Credits"]);
     filters.push(["all", "All"]);
     let html = `<div class="chips-row" role="group" aria-label="Filter">` +
       filters.map(([id, name]) => `<button type="button" class="fchip" data-f="${id}" aria-pressed="false">${name}</button>`).join("") +
       `</div>`;
     html += section("way", "On the way", onTheWay, true, "Nothing on the way right now.");
-    html += section("done", "Delivered", delivered, true, "Nothing delivered yet.");
+    html += section("done", "Collected", delivered, true, "Nothing collected yet.");
     if (adjust.length) html += section("adj", "Credits & adjustments", adjust, false, "");
     html += receipt(entries, owe, toConfirm, later);
 
